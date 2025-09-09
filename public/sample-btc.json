@@ -1,0 +1,35 @@
+{
+    "symbol": "BTC",
+    "name": "Bitcoin",
+    "score": 63,
+    "confidence": "High",
+    "scoreReasons": ["Positive news coverage", "Rising social mentions", "Stable volatility"],
+    "twentyFour": [
+        {"date": "2025-09-07 00:00","price":61100,"sentiment":0.60},
+        {"date": "2025-09-07 04:00","price":61210,"sentiment":0.62},
+        {"date": "2025-09-07 08:00","price":61300,"sentiment":0.63},
+        {"date": "2025-09-07 12:00","price":61420,"sentiment":0.64},
+        {"date": "2025-09-07 16:00","price":61360,"sentiment":0.61},
+        {"date": "2025-09-07 20:00","price":61510,"sentiment":0.65}
+       
+    ],
+    "sevenDay": [
+        {"date": "2025-09-01","price":58500,"sentiment":0.61},
+        {"date": "2025-09-02","price":59250,"sentiment":0.64},
+        {"date": "2025-09-03","price":58800,"sentiment":0.57},
+        {"date": "2025-09-04","price":60020,"sentiment":0.68},
+        {"date": "2025-09-05","price":61200,"sentiment":0.71},
+        {"date": "2025-09-06","price":60750,"sentiment":0.69},
+        {"date": "2025-09-07","price":61510,"sentiment":0.72}
+    ],
+    "drivers": {
+        "positive": ["ETF inflows", "on-chain growth", "dev activity"],
+        "negative": ["regulatory headline", "exchange rumor"]
+    },
+    "sourceMix": {"reddit": 56, "news": 38, "other": 6},
+    "evidence": [
+        {"source": "Reddit", "title": "ETF inflows hit new weekly high", "polarity": "Positive"},
+        {"source": "News", "title": "Regulatory headline raises questions", "polarity": "Negative"},
+        {"source": "RSS/Other", "title": "On-chain activity trending up", "polarity": "Positive"}
+    ]
+}
