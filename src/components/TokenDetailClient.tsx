@@ -1,10 +1,10 @@
 "use client"
 import TrendLine from "./TrendLine";
-import Trendline from "./TrendLine";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useTokenDetail } from "../hooks/useTokenDetail";
 
 type DayRow = { date: string; price: number; sentiment: number };
-type Evidence = { source: string; title: string; polarity: "Positive" | "Negative" | "Neutral" };
+type Evidence = { source: string; title: string; polarity: "Positive" | "Negative" | "Neutral"; url?: string };
 type TokenData = {
     symbol: string; name: string; score: number; confidence: string;
     scoreReasons: string[];
@@ -15,26 +15,15 @@ type TokenData = {
 };
 
 export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string }) {
-    const [data, setData] = useState<TokenData | null>(null);
-    const [error, setError] = useState<string | null>(null);
     const [windowSel, setWindowSel] = useState<"24h" | "7d">("7d");
     const [modalOpen, setModalOpen] = useState(false);
+    const { data, rows, error, isLoading } = useTokenDetail(symbol, windowSel);
 
-    useEffect(() => {
-        const path = symbol.toLowerCase() === "btc" ? "/sample-btc.json" : "/sample-btc.json"; // fallback to BTC for PoC
-        fetch(path)
-            .then((r) => {
-                if (!r.ok) throw new Error(`Failed to load ${path}`);
-                return r.json();
-            })
-            .then(setData)
-            .catch((e) => setError(e.message));
-    }, [symbol]);
+    if (error) return <p className="text-red-400 p-6" role="alert">Error: {String(error)}</p>;
+    if (isLoading || !data) return <p className="p-6 text-slate-300">Loading...</p>
 
-    if (error) return <p className="text-red-400 p-6" role="alert">Error: {error}</p>;
-    if (!data) return <p className="p-6 text-slate-300">Loading...</p>
-
-    const rows = windowSel === "24h" ? data.twentyFour : data.sevenDay;
+    const deltaPts =
+        rows && rows.length > 1 ? Math.round((rows[rows.length - 1 ].sentiment - rows[0].sentiment) * 100) : 0;
 
     return (
         <div className="max-w-6xl mx-auto px-6 py-10">
@@ -43,7 +32,7 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                     <h1 className="text-4xl font-semibold tracking-tight">
                         {data.name} <span className="text-slate-400">({data.symbol})</span>
                     </h1>
-                    <p className="text-sm text-slate-400 mt-1">
+                    <p className="text-base text-slate-400 mt-1">
                         Confidence: <span className="text-emerald-300 font-medium">{data.confidence}</span>
                     </p>
                 </div>
@@ -55,11 +44,10 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                             <button
                                 key={v}
                                 onClick={() => setWindowSel(v)}
-                                className={`px-3 py-1 rounded-full text-sm ${
+                                className={`cursor-pointer px-3 py-1 rounded-full text-sm ${
                                     windowSel === v
                                         ? "bg-slate-700 text-white"
                                         : "text-slate-300 hover:bg-slate-700/40"
-
                                 }`}
                             >
                                 {v}
@@ -67,16 +55,12 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                         ))}
                     </div>
 
-                    {/* score badge */}
-                    <div className="rounded-full border border-yellow-400/30 bg-yellow-400/10 px-4 py-1.5
-                                    text-yellow-300 font-semibold shadow-[0_0_20px_-8px] shadow-yellow-400/60">
-                        Score: {data.score}
-                    </div>
+                    
 
                     {/* why this score link */}
                     <button
                         onClick={() => setModalOpen(true)}
-                        className="text-slate-300 hover:text-white underline underline-offset-4"
+                        className="cursor-pointer text-slate-300 hover:text-white underline underline-offset-4"
                     >
                         Why this score?
                     </button>    
@@ -90,10 +74,27 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                 <section className="md:col-span-3 rounded-2xl bg-white/5 ring-1 ring-white/10 backdrop-blur">
                     <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
                         <h2 className="text-xl font-semibold">{windowSel} Trend (PoC)</h2>
+
+                        {/* score badge + Δ(window) */}
+                        <div className="absolute -top-23 right-6 flex items-center gap-4">
+                            <div 
+                                className="rounded-full border border-yellow-400/30 bg-yellow-400/10 px-5 py-2
+                                        text-yellow-300 font-semibold shadow-[0_0_20px_-8px] shadow-yellow-400/60 text-xl md:text-2xl"
+                                title="Sentiment score (0-100)"         
+                            >
+                            Score: {data.score}
+                        </div>
+                        <span 
+                            className={`text-lg tabular-nums font-semibold md:text-2xl ${deltaPts >= 0 ? "text-emerald-300" : "text-rose-300"}`} 
+                                title={`Change this period: ${deltaPts >= 0 ? "+" : ""}${deltaPts}`}
+                            >
+                                {deltaPts >= 0 ? "▲" : "▼"} {Math.abs(deltaPts)}
+                        </span>
                     </div>
+                </div>
 
                     <div className="px-4 pt-4">
-                        <TrendLine rows={rows} />
+                        <TrendLine rows={rows} windowSel={windowSel}/>
                     </div>
                 </section>
 
@@ -150,7 +151,16 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                         {data.evidence.map((e, i) => (
                             <li key={i} className="px-6 py-3 flex items-center justify-between">
                                 <div>
-                                    <p className="font-medium">{e.title}</p>
+                                    <p className="font-medium">
+                                        {e.url ? (
+                                            <a className="underline hover:opacity-80" href={e.url} target="_blank" rel="noopener noreferrer" aria-label={`Open source: ${e.title}`}>
+                                                {e.title}
+                                            </a>
+                                        ) : (
+                                            e.title
+
+                                        )}
+                                        </p>
                                     <p className="text-xs text-slate-400">{e.source}</p>
                                 </div>
                                 <span className={`px-2 py-1 rounded text-xs ring-1 ${
@@ -167,22 +177,45 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
             </div>
 
             {/* Why this score? modal */}
+
+
             {modalOpen && (
-                <div className="fixed inset-0 z-50">
-                    <div className="absolute inset-0 bg-black/60" onClick={() => setModalOpen(false)} />
+                <div 
+                    className="fixed inset-0 z-50"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="score-modal-title"
+                >
+                    <div 
+                        className="absolute inset-0 bg-black/60 cursor-pointer"
+                        onClick={() => setModalOpen(false)} 
+                    />
+
                     <div className="absolute inset-0 flex items-center justify-center p-4">
-                        <div className="w-full max-w-md rounded-2xl bg-slate-900 ring-1 ring-white/10 p-6">
+                        <div className="w-full max-w-md rounded-2xl bg-slate-900 ring-1 ring-white/10 p-6 shadow-xl">
                             <div className="flex items-center justify-between mb-3">
-                                <h4 className="text-lg font-semibold">Why this score?</h4>
-                                <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-white">✕</button>
+                                <h4 id="score-modal-title" className="text-lg font-semibold">Why this score?</h4>
+                                <button 
+                                    type="button"
+                                    onClick={() => setModalOpen(false)} 
+                                    className="cursor-pointer text-slate-400 hover:text-white" 
+                                    aria-label="Close"
+                                >
+                                    ✕
+                                </button>
                             </div>
+
                             <ul className="list-disc pl-5 space-y-2 text-slate-300">
-                                <li><span className="font-medium">Sources & weights:</span>Reddit, News, RSS (weights vary by quality)</li>
-                                <li><span className="font-medium">Model:</span>FinBERT-like polarity; aggregated to a score</li>
-                                <li><span className="font-medium">Quality filter:</span>dedupe, headline match, score span, credibility</li>
+                                {(data.scoreReasons?.length ? data.scoreReasons : ["No reasons available"]).map((r, i) => (
+                                    <li key={i}>{r}</li>
+                                ))}
                             </ul>
                             <div className="mt-6 text-right">
-                                <button onClick={() => setModalOpen(false)} className="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-4 py-2">
+                                <button 
+                                    type="button" 
+                                    onClick={() => setModalOpen(false)} 
+                                    className=" cursor-pointer rounded-lg bg-indigo-600 hover:bg-indigo-500 px-4 py-2"
+                                >
                                     Close
                                 </button>
                             </div>
