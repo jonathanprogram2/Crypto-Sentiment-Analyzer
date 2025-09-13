@@ -22,8 +22,12 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
     if (error) return <p className="text-red-400 p-6" role="alert">Error: {String(error)}</p>;
     if (isLoading || !data) return <p className="p-6 text-slate-300">Loading...</p>
 
-    const deltaPts =
-        rows && rows.length > 1 ? Math.round((rows[rows.length - 1 ].sentiment - rows[0].sentiment) * 100) : 0;
+    const deltaPct =
+        typeof data.deltaPct === "number"
+            ? data.deltaPct
+            : rows.length > 1
+                ? ((rows.at(-1)!.price - rows[0].price) / rows[0].price) * 100
+                : 0;
 
     return (
         <div className="max-w-6xl mx-auto px-6 py-10">
@@ -85,10 +89,10 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                             Score: {data.score}
                         </div>
                         <span 
-                            className={`text-lg tabular-nums font-semibold md:text-2xl ${deltaPts >= 0 ? "text-emerald-300" : "text-rose-300"}`} 
-                                title={`Change this period: ${deltaPts >= 0 ? "+" : ""}${deltaPts}`}
+                            className={`text-lg tabular-nums font-semibold md:text-2xl ${deltaPct >= 0 ? "text-emerald-300" : "text-rose-300"}`} 
+                                title={`24h change: ${deltaPct >= 0 ? "+" : ""}${deltaPct.toFixed(2)}%`}
                             >
-                                {deltaPts >= 0 ? "▲" : "▼"} {Math.abs(deltaPts)}
+                                {deltaPct >= 0 ? "▲" : "▼"} {Math.abs(deltaPct).toFixed(2)}%
                         </span>
                     </div>
                 </div>

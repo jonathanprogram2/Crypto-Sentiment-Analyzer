@@ -1,10 +1,6 @@
 import TokenDetailClient from "@/components/TokenDetailClient";
 
-export default function TokenPage({ params }: { params: { symbol: string } }) {
-    const { symbol } = params;
-    return (
-        <main>
-            <TokenDetailClient symbol={symbol} />
-        </main>
-    );
+export default async function TokenPage(props: { params: Promise<{ symbol: string }> }) {
+    const { symbol } = await props.params;
+    return <TokenDetailClient symbol={symbol.toLowerCase()} />
 }
