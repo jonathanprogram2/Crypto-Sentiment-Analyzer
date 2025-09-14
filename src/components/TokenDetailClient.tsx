@@ -74,6 +74,26 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
             {/* content grid */}
             <div className="grid md:grid-cols-5 gap-6 mt-8">
 
+                {/* quick prototype filters */}
+                <div className="px-6 pb-2 flex flex-wrap items-center gap-3 text-sm">
+                    <label className="text-slate-300">
+                        Source:
+                        <select className="ml-2 rounded-md bg-slate-800 text-slate-100 px-2 py-1 ring-1 ring-white/10 cursor-pointer">
+                            <option>All</option>
+                            <option>Reddit</option>
+                            <option>News</option>
+                            <option>Other</option>
+                        </select>
+                    </label>
+                    <label className="text-slate-300">
+                        Time:
+                        <select className="ml-2 rounded-md bg-slate-800 text-slate-100 px-2 py-1 ring-1 ring-white/10 cursor-pointer">
+                            <option>24h</option>
+                            <option>7d</option>
+                        </select>
+                    </label>
+                </div>
+
                 {/* Trend */}
                 <section className="md:col-span-3 rounded-2xl bg-white/5 ring-1 ring-white/10 backdrop-blur">
                     <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
