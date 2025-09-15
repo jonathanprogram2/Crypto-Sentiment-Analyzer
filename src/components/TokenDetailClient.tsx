@@ -16,8 +16,15 @@ type TokenData = {
 
 export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string }) {
     const [windowSel, setWindowSel] = useState<"24h" | "7d">("7d");
+    const [sourceSel, setSourceSel] = useState<"All" | "Reddit" | "News" | "Other">("All");
     const [modalOpen, setModalOpen] = useState(false);
-    const { data, rows, error, isLoading } = useTokenDetail(symbol, windowSel);
+    const { data, error, isLoading } = useTokenDetail(symbol, windowSel);
+
+    const rows = windowSel === "24h" ? data.twentyFour : data.sevenDay;
+
+    const evidence = sourceSel === "All"
+        ? data.evidence
+        : data.evidence.filter(e => e.source.toLowerCase() === sourceSel.toLowerCase());
 
     if (error) return <p className="text-red-400 p-6" role="alert">Error: {String(error)}</p>;
     if (isLoading || !data) return <p className="p-6 text-slate-300">Loading...</p>
@@ -43,10 +50,12 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                 
                 <div className="flex items-center gap-3">
                     {/* time window toggle */}
-                    <div className="inline-flex rounded-full bg-slate-800/60 ring-1 ring-white/10 p-1">
+                    <div className="hidden md:inline-flex rounded-full bg-slate-800/60 ring-1 ring-white/10 p-1" role="tablist" aria-label="Time window">
                         {(["24h","7d"] as const).map(v => (
                             <button
                                 key={v}
+                                role="tab"
+                                aria-selected={windowSel === v}
                                 onClick={() => setWindowSel(v)}
                                 className={`cursor-pointer px-3 py-1 rounded-full text-sm ${
                                     windowSel === v
@@ -58,6 +67,34 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                             </button>
                         ))}
                     </div>
+
+                    {/* Select (mobile) */}
+                    <label className="md:hidden text-slate-300 text-sm">
+                        Time:
+                        <select
+                            value={windowSel}
+                            onChange={(e) => setWindowSel(e.target.value as "24h" | "7d")}
+                            className="ml-2 bg-slate-800/60 ring-1 ring-white/10 rounded-md px-2 py-1 text-slate-100"
+                        >
+                            <option value="24h">24h</option>
+                            <option value="7d">7d</option>
+                        </select>
+                    </label>
+
+                    {/* Source filter */}
+                    <label className="text-slate-300 text-sm">
+                        Source:
+                        <select
+                            value={sourceSel}
+                            onChange={(e) => setSourceSel(e.target.value as any)}
+                            className="ml-2 bg-slate-800/60 ring-1 ring-white/10 rounded-md px-2 py-1 text-slate-100"
+                        >
+                            <option>All</option>
+                            <option>Reddit</option>
+                            <option>News</option>
+                            <option>Other</option>
+                        </select>
+                    </label>
 
                     
 
@@ -74,25 +111,6 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
             {/* content grid */}
             <div className="grid md:grid-cols-5 gap-6 mt-8">
 
-                {/* quick prototype filters */}
-                <div className="px-6 pb-2 flex flex-wrap items-center gap-3 text-sm">
-                    <label className="text-slate-300">
-                        Source:
-                        <select className="ml-2 rounded-md bg-slate-800 text-slate-100 px-2 py-1 ring-1 ring-white/10 cursor-pointer">
-                            <option>All</option>
-                            <option>Reddit</option>
-                            <option>News</option>
-                            <option>Other</option>
-                        </select>
-                    </label>
-                    <label className="text-slate-300">
-                        Time:
-                        <select className="ml-2 rounded-md bg-slate-800 text-slate-100 px-2 py-1 ring-1 ring-white/10 cursor-pointer">
-                            <option>24h</option>
-                            <option>7d</option>
-                        </select>
-                    </label>
-                </div>
 
                 {/* Trend */}
                 <section className="md:col-span-3 rounded-2xl bg-white/5 ring-1 ring-white/10 backdrop-blur">
