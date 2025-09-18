@@ -2,6 +2,8 @@
 import TrendLine from "./TrendLine";
 import { useState } from "react";
 import { useTokenDetail } from "../hooks/useTokenDetail";
+import { TOKEN_META } from "@/lib/tokens";
+
 
 type DayRow = { date: string; price: number; sentiment: number };
 type Evidence = { source: string; title: string; polarity: "Positive" | "Negative" | "Neutral"; url?: string };
@@ -12,22 +14,40 @@ type TokenData = {
     drivers: { positive: string[]; negative: string[] };
     sourceMix: { reddit: number; news: number; other: number };
     evidence: Evidence[];
+    priceUsd?: number;
+    deltaPct?: number;
 };
 
 export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string }) {
     const [windowSel, setWindowSel] = useState<"24h" | "7d">("7d");
     const [sourceSel, setSourceSel] = useState<"All" | "Reddit" | "News" | "Other">("All");
     const [modalOpen, setModalOpen] = useState(false);
-    const { data, error, isLoading } = useTokenDetail(symbol, windowSel);
+    const { data, error, isLoading } = useTokenDetail(symbol, windowSel) as {
+        data?: TokenData;
+        error?: unknown;
+        isLoading: boolean;
+    };
 
-    const rows = windowSel === "24h" ? data.twentyFour : data.sevenDay;
+    const rows = windowSel === "24h" 
+        ? (data?.twentyFour ?? [])
+        : (data?.sevenDay ?? []);
 
     const evidence = sourceSel === "All"
-        ? data.evidence
-        : data.evidence.filter(e => e.source.toLowerCase() === sourceSel.toLowerCase());
+        ? (data?.evidence ?? [])
+        : (data?.evidence ?? []).filter(e => e.source.toLowerCase() === sourceSel.toLowerCase());
 
     if (error) return <p className="text-red-400 p-6" role="alert">Error: {String(error)}</p>;
     if (isLoading || !data) return <p className="p-6 text-slate-300">Loading...</p>
+
+    // Score color/glow mapping (static class strings so Tailwind can tree-shake safely)
+    let badgeColor = 
+        "border-yellow-400/30 bg-yellow-400/10 text-yellow-300 shadow-yellow-400/60";
+    if (data.score >= 90)
+        badgeColor = "border-emerald-400/30 bg-emerald-400/10 text-emerald-300 shadow-emerald-400/60";
+    else if (data.score >= 60 && data.score < 70)
+        badgeColor = "border-amber-400/30 bg-amber-400/10 text-amber-300 shadow-amber-400/60";
+    else if (data.score < 60)
+        badgeColor = "border-rose-400/30 bg-rose-400/10 text-rose-300 shadow-rose-400/60";
 
     const deltaPct =
         typeof data.deltaPct === "number"
@@ -39,13 +59,33 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
     return (
         <div className="max-w-6xl mx-auto px-6 py-10">
             <header className="flex items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-4xl font-semibold tracking-tight">
-                        {data.name} <span className="text-slate-400">({data.symbol})</span>
-                    </h1>
-                    <p className="text-base text-slate-400 mt-1">
-                        Confidence: <span className="text-emerald-300 font-medium">{data.confidence}</span>
-                    </p>
+                {/* Left: Logo + name */}
+                <div className="flex items-center gap-3">
+                    {(() => {
+                        const key = (symbol || "").toLowerCase();
+                        const meta = TOKEN_META[key];
+                        return meta ? (
+                            <img
+                                src={meta.logo}
+                                alt={`${meta.label} logo`}
+                                className="h-10 w-10 rounded-full ring-1 ring-white/10 object-contain bg-slate-800"
+                                onError={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = "hidden")}
+                            />
+                        ) : null;
+                    })()}
+                    <div>
+                        <h1 className="text-4xl font-semibold tracking-tight">
+                            {data.name} <span className="text-slate-400">({data.symbol})</span>
+                        </h1>
+                        <p className="text-base text-slate-400 mt-1">
+                            Price:&nbsp;
+                            <span className="font-medium text-white">
+                                {typeof data?.priceUsd === "number" ? `$${data.priceUsd.toLocaleString()}` : "—"}
+                            </span>
+                            <span className="mx-3 text-slate-500">•</span>
+                            Confidence: <span className="text-emerald-300 font-medium">{data.confidence}</span>
+                        </p>
+                    </div>
                 </div>
                 
                 <div className="flex items-center gap-3">
@@ -97,20 +137,18 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                     </label>
 
                     
-
                     {/* why this score link */}
                     <button
                         onClick={() => setModalOpen(true)}
                         className="cursor-pointer text-slate-300 hover:text-white underline underline-offset-4"
                     >
                         Why this score?
-                    </button>    
+                    </button>  
                 </div>
             </header>
 
             {/* content grid */}
             <div className="grid md:grid-cols-5 gap-6 mt-8">
-
 
                 {/* Trend */}
                 <section className="md:col-span-3 rounded-2xl bg-white/5 ring-1 ring-white/10 backdrop-blur">
@@ -119,21 +157,47 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
 
                         {/* score badge + Δ(window) */}
                         <div className="absolute -top-23 right-6 flex items-center gap-4">
-                            <div 
-                                className="rounded-full border border-yellow-400/30 bg-yellow-400/10 px-5 py-2
-                                        text-yellow-300 font-semibold shadow-[0_0_20px_-8px] shadow-yellow-400/60 text-xl md:text-2xl"
-                                title="Sentiment score (0-100)"         
-                            >
-                            Score: {data.score}
+                            <div className="relative group">
+                                <div 
+                                    className={`rounded-full border ${badgeColor} px-5 py-2
+                                            font-semibold shadow-[0_0_20px_-8px] text-xl md:text-2xl`}        
+                                >
+                                Score: {data.score}
+                                </div>
+
+                                {/* Hover legend (appears when hovering the score) */}
+                                <div className="pointer-events-none opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-150 absolute right-0 top-full mt-2 z-10">
+                                    <div className="w-64 rounded-xl bg-slate-900/95 ring-1 ring-white/10 p-3 shadow-xl">
+                                        <p className="text-xs font-semibold text-slate-200 mb-2">Score legend</p>
+                                        <ul className="space-y-1 text-xs text-slate-300">
+                                            <li className="flex items-center gap-2">
+                                                <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
+                                                ≥ 90: strong positive
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <span className="inline-block h-2 w-2 rounded-full bg-yellow-400" />
+                                                70 - 89: positive
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <span className="inline-block h-2 w-2 rounded-full bg-amber-400" />
+                                                60 - 69: mixed/neutral
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <span className="inline-block h-2 w-2 rounded-full bg-rose-400" />
+                                                &lt; 59: negative
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <span 
+                                className={`text-lg tabular-nums font-semibold md:text-2xl ${deltaPct >= 0 ? "text-emerald-300" : "text-rose-300"}`} 
+                                >
+                                    {deltaPct >= 0 ? "▲" : "▼"} {Math.abs(deltaPct).toFixed(2)}%
+                            </span>
                         </div>
-                        <span 
-                            className={`text-lg tabular-nums font-semibold md:text-2xl ${deltaPct >= 0 ? "text-emerald-300" : "text-rose-300"}`} 
-                                title={`24h change: ${deltaPct >= 0 ? "+" : ""}${deltaPct.toFixed(2)}%`}
-                            >
-                                {deltaPct >= 0 ? "▲" : "▼"} {Math.abs(deltaPct).toFixed(2)}%
-                        </span>
                     </div>
-                </div>
 
                     <div className="px-4 pt-4">
                         <TrendLine rows={rows} windowSel={windowSel}/>
@@ -219,8 +283,6 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
             </div>
 
             {/* Why this score? modal */}
-
-
             {modalOpen && (
                 <div 
                     className="fixed inset-0 z-50"

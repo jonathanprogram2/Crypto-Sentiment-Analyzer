@@ -2,22 +2,158 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useTokenDetail } from "@/hooks/useTokenDetail";
+import { createPortal } from "react-dom";
 
-const TOKENS = [
-    { label: "Bitcoin (BTC)", value: "btc" },
-    { label: "Ethereum (ETH)", value: "eth" },
-    { label: "Solana (SOL)", value: "sol" },
-];
+const TOKEN_META: Record<string, { label: string; logo: string }> = {
+    btc: { label: "Bitcoin (BTC)", logo: "/tokens/btc.png" },
+    eth: { label: "Ethereum (ETH)", logo: "/tokens/eth.png" },
+    sol: { label: "Solana (SOL)", logo: "/tokens/sol.png" },
+};
+const TOKENS = Object.entries(TOKEN_META).map(([value, m]) => ({ value, label: m.label }));
+
+// Small, local score->glow helper (mirrors the detail page logic to keep the consistency)
+function scoreGlowClasses(score: number) {
+    if (score >= 90) return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300 shadow-emerald-400/60";
+    if (score >= 70) return "border-yellow-400/30 bg-yellow-400/10 text-yellow-300 shadow-yellow-400/60";
+    if (score >= 60) return "border-amber-400/30 bg-amber-400/10 text-amber-300 shadow-amber-400/60";
+    return "border-rose-400/30 bg-rose-400/10 text-rose-300 shadow-rose-400/60";
+}
+
+// One column in the compare grid
+function ComparePane({ symbol }: { symbol: string }) {
+    const { data, isLoading, error } = useTokenDetail(symbol, "7d") as {
+        data?: {
+            symbol: string;
+            name: string;
+            score: number;
+            priceUsd?: number;
+            deltaPct?: number;
+            evidence: { source: string; title: string; polarity: "Positive" | "Negative" | "Neutral"; url?: string }[];
+        };
+        isLoading: boolean;
+        error?: unknown;
+    };
+
+    const meta = TOKEN_META[symbol];
+    if (!meta) return null;
+
+    const glow = scoreGlowClasses(Number(data?.score ?? 0));
+    const price = typeof data?.priceUsd === "number" ? `$${data!.priceUsd!.toLocaleString()}` : "—";
+    const deltaPct = 
+        typeof data?.deltaPct === "number" ? data!.deltaPct! : 0;
+
+    return (
+        <div className="rounded-2xl bg-white/5 ring-1 ring-white/10 backdrop-blur h-full overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <img
+                        src={meta.logo}
+                        alt={`${meta.label} logo`}
+                        className="h-8 w-8 rounded-full ring-1 ring-white/10 object-contain bg-slate-800"
+                        onError={(e) => ((e.target as HTMLImageElement).style.visibility = "hidden")}
+                    />
+                    <div>
+                        <p className="font-semibold leading-tight">{data?.name ?? meta.label.split(" (")[0]}</p>
+                        <p className="text-xs text-slate-400">({symbol.toUpperCase()})</p>
+                    </div>
+                </div>
+
+                {/* Score + Δ */}
+                <div className="flex items-center gap-3">
+                    <div
+                        className={`rounded-full border ${glow} px-4 py-1.5 font-semibold text-base shadow-[0_0_20px_-8px]`}
+                    >
+                        Score: {isLoading || !data ? "..." : data!.score}
+                    </div>
+                    <span
+                        className={`tabular-nums font-semibold ${deltaPct >= 0 ? "text-emerald-300" : "text-rose-300"}`}
+                    >
+                        {deltaPct >= 0 ? "▲" : "▼"} {Math.abs(deltaPct).toFixed(2)}%
+                    </span>
+                </div>
+            </div>
+
+            {/* Body */}
+            <div className="px-5 py-4 grid gap-4 grid-rows-[auto_auto_1fr] min-h-0">
+                {/* Price */}
+                <div className="text-sm text-slate-300">
+                    <span className="text-slate-400">Price:</span><span className="font-medium text-white">{price}</span>
+                </div>
+
+                {/* Tiny legend to match detail look */}
+                <div className="text-[11px] text-slate-400">
+                    Score legend: <span className="text-emerald-300">≤90</span> |
+                    <span className="text-yellow-300"> 89 - 70</span> |
+                    <span className="text-amber-300"> 69 - 60</span> |
+                    <span className="text-rose-300"> ≥59</span>
+                </div>
+
+                {/* Evidence (scrolls) */}
+                <div className="rounded-xl bg-black/20 ring-1 ring-white/10 overflow-auto">
+                    <div className="px-4 py-2 border-b border-white/10 text-sm font-semibold">Evidence (latest)</div>
+                    {error ? (
+                        <p className="p-4 text-rose-300 text-sm">Failed to load.</p>
+                    ) : isLoading || !data ? (
+                        <ul className="divide-y divide-white/10">
+                            {[...Array(3)].map((_, i) => (
+                                <li key={i} className="px-4 py-3 text-slate-500 text-sm">Loading...</li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <ul className="divide-y divide-white/10">
+                            {(data!.evidence ?? []).slice(0, 4).map((e, i) => (
+                                <li key={i} className="px-4 py-3 flex items-center justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <p className="truncate">{e.url ? <a className="underline" href={e.url} target="_blank">{e.title}</a> : e.title}</p>
+                                        <p className="text-xs text-slate-400">{e.source}</p>
+                                    </div>
+                                    <span className={`px-2 py-0.5 rounded text-[11px] ring-1 ${
+                                        e.polarity === "Positive" ? "bg-emerald-500/15 text-emerald-300 ring-emerald-400/30"
+                                        : e.polarity === "Negative" ? "bg-rose-500/15 text-rose-300 ring-rose-400/30"
+                                        : "bg-slate-500/15 text-slate-300 ring-slate-400/30"
+                                    }`}>
+                                        {e.polarity}
+                                    </span>
+                                </li>
+                            ))}
+                            {(data!.evidence ?? []).length === 0 && (
+                                <li className="px-4 py-3 text-slate-400 text-sm">No items.</li>
+                            )}
+                        </ul>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}
 
 export default function NavBar() {
     const pathname = usePathname();
     const router = useRouter();
     const [open, setOpen] = useState(false);
-    const [left, setLeft] = useState("btc");
-    const [right, setRight] = useState("eth");
 
+    // Detect current token when on /token/[symbol]
     const isDetail = pathname?.startsWith("/token/");
+    const currentSymbol = useMemo(() => {
+        if (!isDetail) return "btc";
+        const last = pathname!.split("/").filter(Boolean).pop()!;
+        return last.toLowerCase();
+    }, [pathname, isDetail]);
+    
+
+    const [rightA, setRightA] = useState<string>("eth");
+
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => { setMounted(true); }, []);
+
+    useEffect(() => {
+        // reserved for future init
+    }, [currentSymbol]);
+
+    
     const crumb = isDetail ? pathname?.split("/").filter(Boolean).slice(-1)[0]?.toUpperCase() : null;
 
     return (
@@ -59,64 +195,84 @@ export default function NavBar() {
                 </div>
             </div>
 
-            {open && (
+            {open && mounted && createPortal(
                 <div className="fixed inset-0 z-50">
-                    <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
-                    <div className="absolute inset-0 flex items-center justify-center p-4">
-                        <div className="w-full max-w-md rounded-2xl bg-slate-900 ring-1 ring-white/10 p-6 shadow-xl">
-                            <div className="flex items-center justify-between mb-3">
-                                <h4 className="text-lg font-semibold">Compare tokens (prototype)</h4>
+                    <div 
+                        className="fixed inset-0 bg-black/60" 
+                        onClick={() => setOpen(false)} 
+                        aria-hidden="true" 
+                    />
+
+                    {/* centered modal */}
+                    <div className="fixed inset-0 flex items-center justify-center p-4">
+                        <div
+                            role="dialog" 
+                            aria-modal="true" 
+                            aria-labelledby="compare-title"
+                            className="
+                                w-[92vw] max-w-7xl 
+                                rounded-2xl bg-slate-900 ring-1 ring-white/10 shadow-2xl 
+                                max-h-[calc(100vh-2rem)] overflow-hidden flex flex-col
+                            "
+                        >
+                            {/* Modal header */}
+                            <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between shrink-0">
+                                <div className="flex items-center gap-3">
+                                    <h4 className="text-lg font-semibold">Compare tokens</h4>
+                                    <span className="text-xs text-slate-400">(left is current token)</span>
+                                </div>
                                 <button
                                     onClick={() => setOpen(false)}
                                     className="text-slate-400 hover:text-white cursor-pointer"
                                     aria-label="Close"
                                 >
-                                   ✕
+                                    ✕
                                 </button>
                             </div>
 
-                            <div className="space-y-4">
-                                <label className="block text-sm text-slate-300">
-                                    Left token
-                                    <select
-                                        className="mt-1 w-full rounded-md bg-slate-800 text-slate-100 px-3 py-2 ring-1 ring-white/10"
-                                        value={left}
-                                        onChange={(e) => setLeft(e.target.value)}
-                                    >
-                                        {TOKENS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                                    </select>
-                                </label>
-
-                                <label className="block text-sm text-slate-300">
-                                    Right token
-                                    <select
-                                        className="mt-1 w-full rounded-md bg-slate-800 text-slate-100 px-3 py-2 ring-1 ring-white/10"
-                                        value={right}
-                                        onChange={(e) => setRight(e.target.value)}
-                                    >
-                                        {TOKENS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                                    </select>
-                                </label>
-
-                                <p className="text-xs text-slate-400">
-                                    This is a prototype interaction. In Iteration 3 I'll land a side-by-side view using the same data endpoints.
-                                </p>
-
-                                <div className="text-right">
-                                    <button
-                                        onClick={() => {
-                                            setOpen(false);
-                                            // In a later iteration, route to / compare?left=...&right=...
-                                        }}
-                                        className="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-white cursor-pointer"
-                                    >
-                                        Continue
-                                    </button>
+                            <div className="px-5 py-3 border-b border-white/10 grid grid-cols-1 md:grid-cols-2 gap-3 shrink-0">
+                                {/* Left (locked to current) */}
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1"> Left (current)</label>
+                                    <div className="w-full rounded-md bg-slate-800 text-slate-100 px-3 py-2 ring-1 ring-white/10 cursor-not-allowed opacity-75">
+                                        {TOKEN_META[currentSymbol]?.label ?? currentSymbol.toUpperCase()}
+                                    </div>
                                 </div>
+                                
+                                {/* Right A*/}
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Right A</label>
+                                    <select
+                                        className="w-full rounded-md bg-slate-800 text-slate-100 px-3 py-2 ring-1 ring-white/10"
+                                        value={rightA}
+                                        onChange={(e) => setRightA(e.target.value)}
+                                    >
+                                        {TOKENS.filter(t => t.value !== currentSymbol).map((t) => (
+                                            <option key={t.value} value={t.value}>{t.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Compare grid */}
+                            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5 min-h-0 flex-1 overflow-y-auto">
+                                <ComparePane symbol={currentSymbol}/>
+                                <ComparePane symbol={rightA}/>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="px-5 py-3 border-t border-white/10 text-right">
+                                <button
+                                    onClick={() => setOpen(false)}
+                                    className="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-white cursor-pointer"
+                                >
+                                    Done
+                                </button>
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

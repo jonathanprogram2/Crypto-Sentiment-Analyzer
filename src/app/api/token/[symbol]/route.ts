@@ -47,7 +47,8 @@ export async function GET(
         const chartRes = await fetch(chartUrl, { headers: cgHeaders, cache: "no-store"});
 
         let sevenDay: DayRow[] = [];
-        if (!chartRes.ok) {
+
+        if (chartRes.ok) {
             const chart = (await chartRes.json()) as { prices: [number, number][] };
             if (Array.isArray(chart.prices) && chart.prices.length > 0) {
                 sevenDay = chart.prices.map(([ts, price]) => ({
@@ -56,6 +57,11 @@ export async function GET(
                     sentiment: 0.5, // keep PoC value for now (optional to refine later)
                 }));
             }
+        } else {
+            // optional: Log the failure for debugging
+            const txt = await chartRes.text().catch(() => "");
+            console.warn("CG chart fail:", chartRes.status, txt)
+
         }
 
         // --- #) Build 24h series + falback if chart was empty
@@ -91,6 +97,7 @@ export async function GET(
         const data = {
             symbol,
             name: meta.name,
+            priceUsd: priceNow,
             score,                   // <- unified with Discover
             confidence: "High",
             deltaPct,
