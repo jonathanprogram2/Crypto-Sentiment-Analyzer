@@ -18,6 +18,78 @@ type TokenData = {
     deltaPct?: number;
 };
 
+function normalizeSource(label: string): "Reddit" | "News" | "Other" {
+    const s = (label || "").toLowerCase();
+    if (s.includes("reddit")) return "Reddit";
+    if (s.includes("news") || s.includes("article") || s.includes("blog")) return "News";
+    return "Other";
+}
+
+function mixFromEvidence(list: { source: string }[]) {
+    const total = Math.max(1, list.length);
+    const counts = { Reddit: 0, News: 0, Other: 0 } as Record<"Reddit"|"News"|"Other", number>;
+    for (const e of list) counts[normalizeSource(e.source)]++;
+    return {
+        reddit: Math.round((counts.Reddit / total) * 100),
+        news: Math.round((counts.News / total) * 100),
+        other: Math.round((counts.Other / total) * 100),
+    };
+}
+
+function confidenceFromScore(score: number) {
+    if (score >= 70) return { label: "High", cls: "text-emerald-300" };
+    if (score >= 60) return { label: "Medium", cls: "text-amber-300" };
+    return { label: "Low", cls: "text-rose-300" };
+}
+
+function countPolarities(list: { polarity: "Positive" | "Negative" | "Neutral" }[]) {
+    return list.reduce(
+        (acc, cur) => {
+            acc[cur.polarity]++
+            return acc
+        },
+        { Positive: 0, Negative: 0, Neutral: 0 }
+    )
+}
+
+function polarityChipClass(p: "Positive" | "Negative" | "Neutral") {
+    if (p === "Positive") return "bg-emerald-500/15 text-emerald-300 ring-emerald-400/30"
+    if (p === "Negative") return "bg-rose-500/15 text-rose-300 ring-rose-400/30"
+    return "bg-slate-500/15 text-slate-300 ring-slate-400/30"
+}
+
+
+const STOP = new Set([
+    "the","a","an","to","of","and","in","on","for","with","as","is","are",
+    "new","up","over","from","vs","by","at","this","that","into","than","its",
+    "has", "have","had","will","can","be","was","were"
+]);
+
+function topKeywords(
+    items: Evidence[],
+    polarity: "Positive" | "Negative" | "Neutral",
+    limit = 3
+) {
+    const freq: Record<string, number> = {};
+    items
+        .filter((e) => e.polarity === polarity)
+        .forEach((e) => {
+            e.title
+                .toLowerCase()
+                .replace(/[^a-z0-9\s]/g, " ")
+                .split(/\s+/)
+                .forEach((w) => {
+                    if (w.length < 3 || STOP.has(w)) return;
+                    freq[w] = (freq[w] || 0) + 1;
+                });
+        });
+    return Object.entries(freq)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, limit)
+        .map(([w]) => w);
+}
+
+
 export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string }) {
     const [windowSel, setWindowSel] = useState<"24h" | "7d">("7d");
     const [sourceSel, setSourceSel] = useState<"All" | "Reddit" | "News" | "Other">("All");
@@ -35,6 +107,8 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
     const evidence = sourceSel === "All"
         ? (data?.evidence ?? [])
         : (data?.evidence ?? []).filter(e => e.source.toLowerCase() === sourceSel.toLowerCase());
+
+    
 
     if (error) return <p className="text-red-400 p-6" role="alert">Error: {String(error)}</p>;
     if (isLoading || !data) return <p className="p-6 text-slate-300">Loading...</p>
@@ -55,6 +129,31 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
             : rows.length > 1
                 ? ((rows.at(-1)!.price - rows[0].price) / rows[0].price) * 100
                 : 0;
+
+    const allEvidence = data.evidence ?? [];
+    const filteredEvidence = 
+        sourceSel === "All"
+        ? allEvidence
+        : allEvidence.filter(e => normalizeSource(e.source) === sourceSel);
+
+    const sourceMix = mixFromEvidence(filteredEvidence);
+
+    const driversPos = topKeywords(filteredEvidence, "Positive");
+    const driversNeg = topKeywords(filteredEvidence, "Negative");
+    const driversNeu = topKeywords(filteredEvidence, "Neutral");
+    const conf = confidenceFromScore(data.score);
+
+    const polarities = countPolarities(filteredEvidence)
+    const topEvidence = filteredEvidence.slice(0, 3)
+    const updatedAt = new Date().toLocaleString([], { hour: "2-digit", minute: "2-digit", month:"short", day: "2-digit" })
+
+    const summaryLine = (() => {
+        const dir = deltaPct >= 0 ? "up" : "down"
+        const dirIcon = deltaPct >= 0 ? "▲" : "▼"
+        const filt = sourceSel === "All" ? "all sources" : sourceSel
+        return `Score ${data.score} with ${dirIcon} ${Math.abs(deltaPct).toFixed(2)}% ${dir} over 24h; based on ${filt.toLowerCase()}.`
+    })()
+
 
     return (
         <div className="max-w-6xl mx-auto px-6 py-10">
@@ -83,7 +182,7 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                                 {typeof data?.priceUsd === "number" ? `$${data.priceUsd.toLocaleString()}` : "—"}
                             </span>
                             <span className="mx-3 text-slate-500">•</span>
-                            Confidence: <span className="text-emerald-300 font-medium">{data.confidence}</span>
+                            Confidence: <span className={`${conf.cls} font-medium`}>{conf.label}</span>
                         </p>
                     </div>
                 </div>
@@ -118,21 +217,6 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                         >
                             <option value="24h">24h</option>
                             <option value="7d">7d</option>
-                        </select>
-                    </label>
-
-                    {/* Source filter */}
-                    <label className="text-slate-300 text-sm">
-                        Source:
-                        <select
-                            value={sourceSel}
-                            onChange={(e) => setSourceSel(e.target.value as any)}
-                            className="ml-2 bg-slate-800/60 ring-1 ring-white/10 rounded-md px-2 py-1 text-slate-100"
-                        >
-                            <option>All</option>
-                            <option>Reddit</option>
-                            <option>News</option>
-                            <option>Other</option>
                         </select>
                     </label>
 
@@ -213,21 +297,50 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                             <div>
                                 <p className="text-slate-400 text-sm mb-2">Positive Mix</p>
                                 <div className="flex flex-wrap gap-2">
-                                    {data.drivers.positive.map((t, i) => (
-                                        <span key={i} className="px-2 py-1 rounded-md text-xs bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30">
+                                    {driversPos.length ? (
+                                        driversPos.map((t, i) => (
+                                        <span key={i} 
+                                            className="px-2 py-1 rounded-md text-xs bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30">
                                             {t}
                                         </span>
-                                    ))}
+                                    ))
+                                ) : (
+                                    <span className="text-slate-500 text-xs">No positive drivers yet.</span>
+                                )}
                                 </div>
                             </div>
+                            
+                            <div>
+                                <p className="text-slate-400 text-sm mb-2">Neutral Mix</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {driversNeu.length ? (
+                                        driversNeu.map((t, i) => (
+                                        <span key={i} 
+                                            className="px-2 py-1 rounded-md text-xs bg-slate-500/15 text-slate-300 ring-1 ring-slate-400/30">
+                                            {t}
+                                        </span>
+                                    ))
+                                ) : (
+                                    <span className="text-slate-500 text-xs">No neutral drivers yet.</span>
+                                )}
+                                </div>
+                            </div>
+
+
+
                             <div>
                                 <p className="text-slate-400 text-sm mb-2">Negative Mix</p>
                                 <div className="flex flex-wrap gap-2">
-                                    {data.drivers.negative.map((t, i) => (
-                                        <span key={i} className="px-2 py-1 rounded-md text-xs bg-rose-500/15 text-rose-300 ring-1 ring-rose-400/30">
-                                            {t}
-                                        </span>
-                                    ))}
+                                    {driversNeg.length ? (
+                                        driversNeg.map((t, i) => (
+                                            <span key={i} 
+                                                className="px-2 py-1 rounded-md text-xs bg-rose-500/15 text-rose-300 ring-1 ring-rose-400/30">
+                                                {t}
+                                            </span>
+                                    ))
+                                ) : (
+                                    <span className="text-slate-500 text-xs">No negative drivers yet.</span>
+                                )}
                                 </div>
                             </div>
                         </div>
@@ -250,16 +363,30 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
 
                 {/* Evidence feed, full-width on small screens */}
                 <section className="md:col-span-5 rounded-2xl bg-white/5 ring-1 ring-white/10 backdrop-blur">
-                    <div className="px-6 py-4 border-b border-white/10">
+                    <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
                         <h3 className="text-lg font-semibold">Evidence Feed</h3>
+                        <label className="text-slate-300 text-sm flex items-center gap-2">
+                            <span className="hidden sm:inline">Source:</span>
+                            <select
+                                value={sourceSel}
+                                onChange={(e) => setSourceSel(e.target.value as any)}
+                                className="bg-slate-800/60 ring-1 ring-white/10 rounded-md px-2 py-1 text-slate-100"
+                                aria-label="Filter evidence by source"
+                            >
+                                <option value="All">All</option>
+                                <option value="Reddit">Reddit</option>
+                                <option value="News">News</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </label>
                     </div>
                     <ul className="divide-y divide-white/10">
-                        {data.evidence.map((e, i) => (
+                        {filteredEvidence.map((e, i) => (
                             <li key={i} className="px-6 py-3 flex items-center justify-between">
                                 <div>
                                     <p className="font-medium">
                                         {e.url ? (
-                                            <a className="underline hover:opacity-80" href={e.url} target="_blank" rel="noopener noreferrer" aria-label={`Open source: ${e.title}`}>
+                                            <a className="no-underline hover:opacity-80 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-sm" href={e.url} target="_blank" rel="noopener noreferrer" aria-label={`Open source: ${e.title}`}>
                                                 {e.title}
                                             </a>
                                         ) : (
@@ -267,7 +394,7 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
 
                                         )}
                                         </p>
-                                    <p className="text-xs text-slate-400">{e.source}</p>
+                                    <p className="text-xs text-slate-400">{normalizeSource(e.source)}</p>
                                 </div>
                                 <span className={`px-2 py-1 rounded text-xs ring-1 ${
                                     e.polarity === "Positive" ? "bg-emerald-500/15 text-emerald-300 ring-emerald-400/30"
@@ -278,6 +405,9 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                                 </span>
                             </li>
                         ))}
+                        {filteredEvidence.length === 0 && (
+                            <li className="px-6 py-6 text-slate-400 text-sm">No evidence for this source.</li>
+                        )}
                     </ul>
                 </section>
             </div>
@@ -309,11 +439,69 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                                 </button>
                             </div>
 
-                            <ul className="list-disc pl-5 space-y-2 text-slate-300">
-                                {(data.scoreReasons?.length ? data.scoreReasons : ["No reasons available"]).map((r, i) => (
-                                    <li key={i}>{r}</li>
-                                ))}
-                            </ul>
+                            {/* Live brief */}
+                            <div className="space-y-4">
+                                {/* Headline line */}
+                                <p className="text-slate-200">{summaryLine}</p>
+
+                                {/* KPI chips */}
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <span className="px-2.5 py-1 rounded-full text-xs ring-1 ring-white/10 bg-white/5">
+                                        Price: <span className="font-median text-white">${(data.priceUsd ?? 0).toLocaleString()}</span>
+                                    </span>
+                                    <span className={`px-2.5 py-1 rounded-full text-xs ring-1 ring-white/10 ${deltaPct >= 0 ? "text-emerald-300 bg-emerald-500/10" : "text-rose-300 bg-rose-500/10"}`}>
+                                        {deltaPct >= 0 ? "▲" : "▼"} {Math.abs(deltaPct).toFixed(2)}% (24h)
+                                    </span>
+                                    <span className="px-2.5 py-1 rounded-full text-xs ring-1 ring-white/10 bg-white/5">
+                                        Positive: <span className="text-emerald-300 font-medium">{polarities.Positive}</span>
+                                    </span>
+                                    <span className="px-2.5 py-1 rounded-full text-xs ring-1 ring-white/10 bg-white/5">
+                                        Neutral: <span className="text-slate-300 font-medium">{polarities.Neutral}</span>
+                                    </span>
+                                    <span className="px-2.5 py-1 rounded-full text-xs ring-1 ring-white/10 bg-white/5">
+                                        Negative: <span className="text-rose-300 font-medium">{polarities.Negative}</span>
+                                    </span>
+                                </div>
+
+                                {/* Top evidence (respects current Source filter) */}
+                                <div>
+                                    <p className="text-xs text-slate-400 mb-2">
+                                        Recent evidence (top {topEvidence.length}{sourceSel !== "All" ? ` • ${sourceSel}` : ""})
+                                    </p>
+                                    <ul className="space-y-2">
+                                        {topEvidence.map((e, i) => (
+                                            <li key={i} className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    {e.url ? (
+                                                        <a
+                                                            href={e.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="no-underline hover:opacity-80 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-sm"
+                                                            aria-label={`Open source: ${e.title}`}
+                                                        >
+                                                            <p className="text-sm text-slate-200 truncate">{e.title}</p>
+                                                        </a>
+                                                    ) : (
+                                                        <p className="text-sm text-slate-200 truncate">{e.title}</p>
+                                                    )}
+                                                    <p className="text-[11px] text-slate-400">{normalizeSource(e.source)}</p>
+                                                </div>
+                                                <span className={`px-1.5 py-0.5 rounded text-[11px] ring-1 ${polarityChipClass(e.polarity)}`}>
+                                                    {e.polarity}
+                                                </span>
+                                            </li>
+                                        ))}
+                                        {topEvidence.length === 0 && (
+                                            <li className="text-sm text-slate-400">No recent items for this source.</li>
+                                        )}
+                                    </ul>
+                                </div>
+
+                                {/* Footer line */}
+                                <p className="text-[11px] text-slate-500">Updated {updatedAt}</p>
+                            </div>
+
                             <div className="mt-6 text-right">
                                 <button 
                                     type="button" 
