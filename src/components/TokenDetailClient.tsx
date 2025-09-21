@@ -19,21 +19,71 @@ type TokenData = {
 };
 
 function normalizeSource(label: string): "Reddit" | "News" | "Other" {
-    const s = (label || "").toLowerCase();
+    const s = (label || "").toLowerCase().trim();
+
+    // Reddit
     if (s.includes("reddit")) return "Reddit";
-    if (s.includes("news") || s.includes("article") || s.includes("blog")) return "News";
+
+    // News/articles/blogs/press/vendors etc.
+    if (
+        s.includes("news") || 
+        s.includes("article") || 
+        s.includes("blog") ||
+        s.includes("press") ||
+        s.includes("coindesk") ||
+        s.includes("cointelegraph") ||
+        s.includes("decrypt") ||
+        s.includes("medium") ||
+        s.includes("substack") 
+    ) {
+        return "News";
+    }
+
+    // "RSS/Other", "rss", generic, or anything unknown
+    if (s.includes("rss")) return "Other";
     return "Other";
 }
 
 function mixFromEvidence(list: { source: string }[]) {
-    const total = Math.max(1, list.length);
-    const counts = { Reddit: 0, News: 0, Other: 0 } as Record<"Reddit"|"News"|"Other", number>;
-    for (const e of list) counts[normalizeSource(e.source)]++;
-    return {
-        reddit: Math.round((counts.Reddit / total) * 100),
-        news: Math.round((counts.News / total) * 100),
-        other: Math.round((counts.Other / total) * 100),
+    const total = list.length;
+    if (total === 0) return { reddit: 0, news: 0, other: 0 };
+
+    const counts = { reddit: 0, news: 0, other: 0 };
+    for (const e of list) {
+        const norm = normalizeSource(e.source);
+        if (norm === "Reddit") counts.reddit++;
+        else if (norm === "News") counts.news++;
+        else counts.other++;
+    } 
+
+    type Key = keyof typeof counts;
+
+    const raw: Record<Key, number> = {
+        reddit: (counts.reddit / total) * 100,
+        news: (counts.news / total) * 100,
+        other: (counts.other / total) * 100,
     };
+
+    const rounded: Record<Key, number> = {
+        reddit: Math.floor(raw.reddit),
+        news: Math.floor(raw.news),
+        other: Math.floor(raw.other),
+    };
+
+    let remainder = 100 - (rounded.reddit + rounded.news + rounded.other);
+
+    const order: Key[] = (["reddit", "news", "other"] as const)
+        .slice()
+        .sort((a: Key, b: Key) => raw[b] - raw[a]);
+
+    let i = 0;
+    while (remainder-- > 0) {
+        const k: Key = order[i % order.length];
+        rounded[k]++;
+        i++;
+    }
+
+    return rounded;
 }
 
 function confidenceFromScore(score: number) {
@@ -103,10 +153,6 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
     const rows = windowSel === "24h" 
         ? (data?.twentyFour ?? [])
         : (data?.sevenDay ?? []);
-
-    const evidence = sourceSel === "All"
-        ? (data?.evidence ?? [])
-        : (data?.evidence ?? []).filter(e => e.source.toLowerCase() === sourceSel.toLowerCase());
 
     
 
@@ -352,9 +398,9 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                                 <div key={k} className="flex items-center gap-3 mb-2">
                                     <span className="w-16 text-xs uppercase text-slate-400">{k}</span>
                                     <div className="flex-1 h-2 rounded bg-slate-800 ring-1 ring-white/10 overflow-hidden">
-                                        <div className="h-full bg-slate-300" style={{ width: `${data.sourceMix[k]}%` }} />
+                                        <div className="h-full bg-slate-300" style={{ width: `${sourceMix[k]}%` }} />
                                     </div>
-                                    <span className="w-10 text-right tabular-nums text-slate-300 text-xs">{data.sourceMix[k]}%</span>
+                                    <span className="w-10 text-right tabular-nums text-slate-300 text-xs">{sourceMix[k]}%</span>
                                 </div>
                             ))}
                         </div>

@@ -1,10 +1,12 @@
 "use client"
 
 import Link from "next/link";
+import React from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useTokenDetail } from "@/hooks/useTokenDetail";
 import { createPortal } from "react-dom";
+import HeatmapTreemapPlotly from "./HeatmapTreemapPlotly";
 
 const TOKEN_META: Record<string, { label: string; logo: string }> = {
     btc: { label: "Bitcoin (BTC)", logo: "/tokens/btc.png" },
@@ -12,6 +14,8 @@ const TOKEN_META: Record<string, { label: string; logo: string }> = {
     sol: { label: "Solana (SOL)", logo: "/tokens/sol.png" },
 };
 const TOKENS = Object.entries(TOKEN_META).map(([value, m]) => ({ value, label: m.label }));
+
+
 
 // Small, local score->glow helper (mirrors the detail page logic to keep the consistency)
 function scoreGlowClasses(score: number) {
@@ -43,6 +47,8 @@ function ComparePane({ symbol }: { symbol: string }) {
     const price = typeof data?.priceUsd === "number" ? `$${data!.priceUsd!.toLocaleString()}` : "—";
     const deltaPct = 
         typeof data?.deltaPct === "number" ? data!.deltaPct! : 0;
+
+    
 
     return (
         <div className="rounded-2xl bg-white/5 ring-1 ring-white/10 backdrop-blur h-full overflow-hidden flex flex-col">
@@ -130,10 +136,78 @@ function ComparePane({ symbol }: { symbol: string }) {
     )
 }
 
+function HeatmapCompare({ left, right }: { left: string; right: string }) {
+    const { data: A } = (useTokenDetail(left, "7d") as any) || {};
+    const { data: B } = (useTokenDetail(right, "7d") as any) || {};
+
+    type Pol = "Positive" | "Neutral" | "Negative";
+    const buckets: Pol[] = ["Positive", "Neutral", "Negative"];
+
+    function tally(data?: { evidence?: { polarity: Pol }[] }) {
+        const t = { Positive: 0, Neutral: 0, Negative: 0 } as Record<Pol, number>;
+        (data?.evidence ?? []).forEach(e => { t[e.polarity]++; });
+        return t;
+    }
+
+    const tA = tally(A);
+    const tB = tally(B);
+    const max = Math.max(...["Positive","Neutral","Negative"].map(k => tA[k as Pol] + tB[k as Pol]), 1);
+
+    // map sentiment -> base color
+    const base = {
+        Positive: { r: 34, g: 197, b: 94 }, 
+        Neutral: { r: 148, g: 163, b: 184 }, 
+        Negative: { r: 244, g: 63, b: 94 }, 
+    } as const;
+
+    function cellStyle(sent: Pol, v: number) {
+        // intensity 10%...100% based 
+        const alpha = Math.max(0.1, Math.min(1, v / max));
+        const { r, g, b } = base[sent];
+        return {
+            backgroundColor: `rgba(${r}, ${g}, ${b}, ${alpha})`,
+            border: "1px solid rgba(255,255,255,0.08)"
+        } as React.CSSProperties;
+    }
+
+    return (
+        <div className="w-full">
+            <div className="mb-3 text-sm text-slate-300">
+                Heatmap compares evidence polarity counts for each token (last 7d).
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 text-xs">
+                <div />
+                <div className="text-center font-medium text-slate-200 uppercase">{(A?.symbol ?? left).toUpperCase()}</div>
+                <div className="text-center font-medium text-slate-200 uppercase">{(B?.symbol ?? right).toUpperCase()}</div>
+
+                {buckets.map(sent => (
+                    <React.Fragment key={sent}>
+                        <div className="self-center font-medium text-slate-300">{sent}</div>
+
+                        <div className="rounded-md p-3 text-center text-slate-900 font-semibold"
+                                style={cellStyle(sent, tA[sent])}>
+                            {tA[sent]}
+                        </div>
+
+                        <div className="rounded-md p-3 text-center text-slate-900 font-semibold"
+                                style={cellStyle(sent, tB[sent])}>
+                            {tB[sent]}
+                        </div>
+                    </React.Fragment>
+                ))}
+            </div>
+        </div>
+    )
+}
+
 export default function NavBar() {
     const pathname = usePathname();
     const router = useRouter();
     const [open, setOpen] = useState(false);
+    const [showHeatmap, setShowHeatmap] = useState(false);
+
+    
 
     // Detect current token when on /token/[symbol]
     const isDetail = pathname?.startsWith("/token/");
@@ -153,7 +227,10 @@ export default function NavBar() {
         // reserved for future init
     }, [currentSymbol]);
 
-    
+
+    const leftDetail = useTokenDetail(currentSymbol, "7d") as any;
+    const rightDetail = useTokenDetail(rightA, "7d") as any;
+
     const crumb = isDetail ? pathname?.split("/").filter(Boolean).slice(-1)[0]?.toUpperCase() : null;
 
     return (
@@ -216,18 +293,39 @@ export default function NavBar() {
                             "
                         >
                             {/* Modal header */}
-                            <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between shrink-0">
+                            <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
+                                    {showHeatmap ? (
+                                        <button
+                                            onClick={() => setShowHeatmap(false)}
+                                            className="rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-slate-200 cursor-pointer"
+                                        >
+                                            ← Back
+                                        </button>
+                                    ) : null}
                                     <h4 className="text-lg font-semibold">Compare tokens</h4>
                                     <span className="text-xs text-slate-400">(left is current token)</span>
                                 </div>
-                                <button
-                                    onClick={() => setOpen(false)}
-                                    className="text-slate-400 hover:text-white cursor-pointer"
-                                    aria-label="Close"
-                                >
-                                    ✕
-                                </button>
+
+                                <div className="flex items-center gap-2">
+                                    {!showHeatmap && (
+                                        <button 
+                                            onClick={() => setShowHeatmap(true)}
+                                            className="rounded-full bg-amber-500/15 text-amber-300 ring-1 ring-amber-400/30 hover:bg-amber-500/25 px-3 py-1.5 cursor-pointer"
+                                            title="Show sentiment heatmap"
+                                        >
+                                
+                                            Who&apos;s Hot? <span aria-hidden>🔥</span> 
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => setOpen(false)}
+                                        className="text-slate-400 hover:text-white cursor-pointer"
+                                        aria-label="Close"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="px-5 py-3 border-b border-white/10 grid grid-cols-1 md:grid-cols-2 gap-3 shrink-0">
@@ -255,9 +353,28 @@ export default function NavBar() {
                             </div>
 
                             {/* Compare grid */}
-                            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5 min-h-0 flex-1 overflow-y-auto">
-                                <ComparePane symbol={currentSymbol}/>
-                                <ComparePane symbol={rightA}/>
+                            <div className="p-5 min-h-0 flex-1 overflow-y-auto">
+                                {showHeatmap ? (
+                                    <div className="p-5">
+                                        <HeatmapTreemapPlotly 
+                                            left={{
+                                                symbol: currentSymbol,
+                                                name: leftDetail?.data?.name ?? currentSymbol.toUpperCase(),
+                                                evidence: leftDetail?.data?.evidence ?? [],
+                                            }} 
+                                            right={{
+                                                symbol: rightA,
+                                                name: rightDetail?.data?.name ?? rightA.toUpperCase(),
+                                                evidence: rightDetail?.data?.evidence ?? [],
+                                            }} 
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5 min-h-0 flex-1 overflow-y-auto">
+                                        <ComparePane symbol={currentSymbol}/>
+                                        <ComparePane symbol={rightA}/>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Footer */}
