@@ -18,6 +18,7 @@ type Evidence = { source: "Reddit" | "News" | "Other"; title: string; url?: stri
 type RouteParams = { params: Promise<{ symbol: string }> };
 
 const sentiment = new Sentiment();
+const result = sentiment.analyze("text");
 const toPolarity = (s: number): Polarity => (s > 1 ? "Positive" : s < -1 ? "Negative" : "Neutral");
 
 const withTimeout = <T,>(p: Promise<T>, ms = 4500) =>
