@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { scoreFromChange } from "@/lib/scoring";
 import Sentiment from "sentiment";
+
 
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,7 @@ const MAP: Record<string, { id: string; name: string }> = {
 type DayRow = { date: string; price: number; sentiment: number };
 type Polarity = "Positive" | "Negative" | "Neutral";
 type Evidence = { source: "Reddit" | "News" | "Other"; title: string; url?: string; polarity: Polarity };
+type RouteParams = { params: Promise<{ symbol: string }> };
 
 const sentiment = new Sentiment();
 const toPolarity = (s: number): Polarity => (s > 1 ? "Positive" : s < -1 ? "Negative" : "Neutral");
@@ -87,11 +89,11 @@ async function fetchOtherEvidence(q: string): Promise<Evidence[]> {
 /** ------------------------------------------------------------------------------------------------------------------ */
 
 export async function GET(
-    _req: Request, 
-    { params }: { params: { symbol: string } }
+    _req: NextRequest, 
+    { params }: RouteParams 
 ) {
     try {
-        const symbol = (params.symbol || "").toLowerCase();
+        const { symbol } = await params;
         const meta = MAP[symbol];
         if (!meta) { return NextResponse.json({ error: "Unknown symbol" }, { status: 400 });
         }
