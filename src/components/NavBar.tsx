@@ -260,7 +260,8 @@ export default function NavBar() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <Link href="/" className="text-slate-300 hover:text-white cursor-pointer">
+                    <Link href={`/explore?symbol=${(isDetail ? currentSymbol : "btc")}`} 
+                    className="text-slate-300 hover:text-white cursor-pointer">
                         Explore
                     </Link>
                     <button
