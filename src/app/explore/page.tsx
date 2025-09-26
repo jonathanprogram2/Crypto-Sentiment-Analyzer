@@ -32,6 +32,7 @@ type Item = {
 const DAYS_WINDOW = 7;
 const msPerDay = 24 * 60 * 60 * 1000;
 const now = Date.now();
+const isHttpUrl = (u?: string | null) => !!u && /^https?:\/\//i.test(u);
 
 function safeDate(iso?: string) {
     if (!iso) return new Date();
@@ -126,14 +127,15 @@ export default async function ExplorePage({
                                 <a href={it.url ?? "#"} target={it.url ? "_blank" : "_self"} className="block">
                                     <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-0 md:gap-4">
                                         {/* Thumb */}
-                                        {it.image ? (
+                                        {isHttpUrl(it.image) ? (
                                             <div className="relative h-48 md:h-full md:min-h-[160px]">
                                                 <Image
-                                                    src={it.image}
+                                                    src={it.image!}
                                                     alt=""
                                                     fill
                                                     sizes="(max-width: 768px) 100vw, 240px"
                                                     className="object-cover"
+                                                    unoptimized
                                                     onError={(e) => { (e.currentTarget as any).style.display = 'none'; }}
                                                 />
                                             </div>
