@@ -8,16 +8,23 @@ export const dynamic = "force-dynamic"
 
 
 async function getTokenDetail(symbol: string) {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/api/token/${symbol}?window=7d`, {
-        next: { revalidate: 60 * 15 },
-    });
-    if (!res.ok) throw new Error("Failed to fetch token detail");
+    try {
+        const url = `${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/api/token/${symbol}?window=7d`;
+        const res =  await fetch(url, { cache: "no-store", next: { revalidate: 60 * 15 } });
+        if (!res.ok) {
+            return { symbol, name: symbol.toUpperCase(), evidence: [] };
+    }
     return res.json() as Promise<{
         symbol: string;
         name: string;
         evidence: { title: string; url?: string; source: string; polarity: "Positive" | "Neutral" | "Negative"; publishedAt?: string }[];
     }>;
+} catch {
+    return { symbol, name: symbol.toUpperCase(), evidence: [] };
 }
+
+}
+
 
 type Item = {
     title: string;
