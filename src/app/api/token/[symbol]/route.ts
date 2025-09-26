@@ -3,8 +3,10 @@ import { scoreFromChange } from "@/lib/scoring";
 import Sentiment from "sentiment";
 
 
-
+export const runtime = "nodejs"
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 
 const MAP: Record<string, { id: string; name: string }> = {
     btc: { id: "bitcoin", name: "Bitcoin" },
@@ -18,7 +20,6 @@ type Evidence = { source: "Reddit" | "News" | "Other"; title: string; url?: stri
 type RouteParams = { params: Promise<{ symbol: string }> };
 
 const sentiment = new Sentiment();
-const result = sentiment.analyze("text");
 const toPolarity = (s: number): Polarity => (s > 1 ? "Positive" : s < -1 ? "Negative" : "Neutral");
 
 const withTimeout = <T,>(p: Promise<T>, ms = 4500) =>
@@ -105,11 +106,37 @@ export async function GET(
         const simpleUrl =
             `https://api.coingecko.com/api/v3/simple/price?ids=${meta.id}&vs_currencies=usd&include_24hr_change=true`;
             
-        const simpleRes = await fetch(simpleUrl, { headers: cgHeaders, cache: "no-store" }
+        let simpleRes = await fetch(simpleUrl, { headers: cgHeaders, cache: "no-store" }
         );
         if (!simpleRes.ok) {
-            const txt = await simpleRes.text();
-            return NextResponse.json({ error: `CG simple fail: ${simpleRes.status} ${txt}` }, { status: 502 });
+            simpleRes = await fetch(simpleUrl, { cache: "no-store" });
+        }
+
+        if (!simpleRes.ok) {
+            const msg = await simpleRes.text().catch(() => "");
+            console.error("CG simple fail:", simpleRes.status, msg);
+
+            const priceNow = 0;
+            const deltaPct = 0;
+            const deltaAbs = 0;
+            const score = scoreFromChange(deltaPct);
+
+            return NextResponse.json({
+                symbol,
+                name: meta.name,
+                priceUsd: priceNow,
+                score,
+                confidence: "Low",
+                deltaPct,
+                deltaAbs,
+                twentyFour: [],
+                sevenDay: [],
+                debug: { usedFallback: true, reason: "coingecko-simple-failed" },
+                scoreReasons: ["Using fallback because price API failed."],
+                drivers: { positive: [], negative: [] },
+                sourceMix: { reddit: 0, news: 0, other: 0 },
+                evidence: []
+            }, { headers: { "Cache-Control": "no-store" } });
         }
         const simple = await simpleRes.json() as Record<string, { usd: number; usd_24h_change: number }>;
         const priceNow = Number(simple[meta.id]?.usd ?? 0);

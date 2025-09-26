@@ -2,6 +2,10 @@ import { fetchOg } from "@/lib/og";
 import Image from "next/image";
 import Link from "next/link";
 
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+
+
 
 async function getTokenDetail(symbol: string) {
     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/api/token/${symbol}?window=7d`, {
