@@ -260,17 +260,16 @@ export default function NavBar() {
                 </div>
 
                 <div className="flex items-center gap-4">
+                    <Link href={`/explore?symbol=${(isDetail ? currentSymbol : "btc")}`} 
+                    className="text-slate-300 hover:text-white cursor-pointer">
+                        Explore
+                    </Link>
                     <button
                         className="rounded-lg bg-slate-800 px-3 py-1.5 text-slate-200 hover:bg-slate-700 cursor-pointer"
                         onClick={() => setOpen(true)}
                     >
                         Compare
                     </button>
-
-                    <Link href={`/explore?symbol=${(isDetail ? currentSymbol : "btc")}`} 
-                    className="text-slate-300 hover:text-white cursor-pointer">
-                        Explore
-                    </Link>
                 </div>
             </div>
 
