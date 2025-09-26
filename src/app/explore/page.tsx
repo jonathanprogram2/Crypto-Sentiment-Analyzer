@@ -1,6 +1,7 @@
 import { fetchOg } from "@/lib/og";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+
 
 async function getTokenDetail(symbol: string) {
     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/api/token/${symbol}?window=7d`, {
@@ -98,13 +99,12 @@ export default async function ExplorePage({
             );
         }
 
-        const router = useRouter();
 
         return (
             <div className="max-w-6xl mx-auto px-6 py-10">
                 <div className="mb-6 flex items-center justify-between">
                     <h1 className="text-3xl font-semibold">Explore <span className="text-slate-400">/ {detail.name}</span></h1>
-                    <button onClick={() => router.push(`/token/${symbol.toLowerCase()}`)} className="rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-slate-200">← Back to Detail</button>
+                    <Link href={`/token/${symbol.toLowerCase()}`} className="rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-slate-200">← Back to Detail</Link>
                 </div>
 
                 {/* Single news column */}
