@@ -110,6 +110,7 @@ export async function GET(
     try {
        
         const { symbol } = await params;
+        console.log("TOKEN API hit", { symbol, when: new Date().toISOString(), vercelUrl: process.env.VERCEL_URL });
         const meta = MAP[symbol];
         if (!meta) { return NextResponse.json({ error: "Unknown symbol" }, { status: 400 });
         }
@@ -206,6 +207,13 @@ export async function GET(
             ...(r2.status === "fulfilled" ? r2.value : []),
             ...(r3.status === "fulfilled" ? r3.value : []),
         ].slice(0, 12);
+
+        console.log("Evidence results", {
+            r1: r1.status === "fulfilled" ? (r1.value as Evidence[]).length : `err:${String((r1 as any).reason)}`,
+            r2: r2.status === "fulfilled" ? (r2.value as Evidence[]).length : `err:${String((r2 as any).reason)}`,
+            r3: r3.status === "fulfilled" ? (r3.value as Evidence[]).length : `err:${String((r3 as any).reason)}`,
+            total: evidence.length,
+        });
 
         const counts = { reddit: 0, news: 0, other: 0 };
         for (const e of evidence) {
