@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import HeadlineCard from "./HeadlineCard";
 import { useTokenDetail } from "@/hooks/useTokenDetail";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 
@@ -20,6 +21,7 @@ export default function ExploreClient({ initialSymbol = "btc" }: { initialSymbol
     const [source, setSource] = useState<"All" | "Reddit" | "News" | "Other">("All");
     const [q, setQ] = useState("");
     const { data } = useTokenDetail(symbol, "7d") as any;
+    const router = useRouter();
 
     // url -> enrichment
     const [enrichMap, setEnrichMap] = useState<Record<string, any>>({});
@@ -63,7 +65,14 @@ export default function ExploreClient({ initialSymbol = "btc" }: { initialSymbol
             
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-semibold">Explore</h1>
-                <Link href="/" className="rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-slate-200">Back to Detail</Link>
+                <button
+                    type="button"
+                    onClick={() => router.push(`/token/${symbol.toLowerCase()}`)}
+                    className="rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-slate-200"
+                >
+                    ← Back to token detail
+                </button>
+                <Link href="/" className="rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-slate-200">Back to Discover</Link>
             </div>
         
             {/* Controls */}
