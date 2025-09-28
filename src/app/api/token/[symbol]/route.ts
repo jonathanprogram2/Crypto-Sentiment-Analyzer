@@ -101,6 +101,52 @@ async function fetchOtherEvidence(q: string): Promise<Evidence[]> {
   });
 }
 
+// Generic RSS grabber (title + link)
+async function fetchRssItems(url: string, take = 10): Promise<{ title: string; link: string }[]> {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) return [];
+    const xml = await res.text();
+
+    const items = Array.from(
+        xml.matchAll(/<item>[\s\S]*?<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>[\s\S]*?<link>(.*?)<\/link>[\s\S]*?<\/item>/gi)
+    )
+        .map(m => ({ title: m[1].trim(), link: m[2].trim() }))
+        .filter(i => i.title && i.link)
+        .slice(0, take);
+
+    return items;
+}
+
+async function fetchCoinDeskNews(q: string): Promise<Evidence[]> {
+    // CoinDesk RSS
+    const url = "https://www.coindesk.com/arc/outboundfeeds/rss/";
+    const items = await fetchRssItems(url, 30);
+    return items
+        .filter(i => i.title.toLowerCase().includes(q.toLowerCase()))
+        .slice(0, 6)
+        .map(i => ({
+            source: "News",
+            title: i.title,
+            url: i.link,
+            polarity: toPolarity(sentiment.analyze(i.title).score),
+        }));
+}
+
+async function fetchCoinTelegraphNews(q: string): Promise<Evidence[]> {
+    // CoinTelegraph RSS
+    const url = "https://cointelegraph.com/rss";
+    const items = await fetchRssItems(url, 30);
+    return items
+        .filter(i => i.title.toLowerCase().includes(q.toLowerCase()))
+        .slice(0, 6)
+        .map(i => ({
+            source: "News",
+            title: i.title,
+            url: i.link,
+            polarity: toPolarity(sentiment.analyze(i.title).score),
+        }));  
+}
+
 /** ------------------------------------------------------------------------------------------------------------------ */
 
 export async function GET(
@@ -196,17 +242,21 @@ export async function GET(
 
         // 4) Evidence ------------------------------------------
         const query = meta.name; // "Bitcoin", "Ethereum", "Solana"
-        const [r1, r2, r3] = await Promise.allSettled([
-            withTimeout(fetchRedditEvidence(query), 4500),
-            withTimeout(fetchGoogleNewsEvidence(query), 4500),
-            withTimeout(fetchOtherEvidence(query), 4500),
+        const [r1, r2, r3, r4, r5] = await Promise.allSettled([
+            withTimeout(fetchRedditEvidence(query), 4500),     // Reddit
+            withTimeout(fetchGoogleNewsEvidence(query), 4500), // Google
+            withTimeout(fetchOtherEvidence(query), 4500),      // Hacker News(Other)
+            withTimeout(fetchCoinDeskNews(query), 4500),       // CoinDesk (News)
+            withTimeout(fetchCoinTelegraphNews(query), 4500),  // CoinTelegraph (News)
         ]);
 
         const evidence: Evidence[] = [
             ...(r1.status === "fulfilled" ? r1.value : []),
             ...(r2.status === "fulfilled" ? r2.value : []),
             ...(r3.status === "fulfilled" ? r3.value : []),
-        ].slice(0, 12);
+            ...(r4.status === "fulfilled" ? r4.value : []),
+            ...(r5.status === "fulfilled" ? r5.value : []),
+        ].slice(0, 24);
 
         console.log("Evidence results", {
             r1: r1.status === "fulfilled" ? (r1.value as Evidence[]).length : `err:${String((r1 as any).reason)}`,
