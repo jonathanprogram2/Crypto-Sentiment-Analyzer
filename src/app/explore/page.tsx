@@ -1,10 +1,10 @@
 import { fetchOg } from "@/lib/og";
 import Image from "next/image";
 import Link from "next/link";
+import { headers } from "next/headers";
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-
 
 
 async function getTokenDetail(symbol: string) {
@@ -24,7 +24,6 @@ async function getTokenDetail(symbol: string) {
 }
 
 }
-
 
 type Item = {
     title: string;

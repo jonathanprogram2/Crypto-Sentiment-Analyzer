@@ -6,8 +6,10 @@ import Sentiment from "sentiment";
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-export const MaxDuration = 15;
 
+type Polarity = "Positive" | "Negative" | "Neutral";
+type Evidence = { source: "Reddit" | "News" | "Other"; title: string; url?: string; polarity: Polarity };
+type DayRow = { date: string; price: number; sentiment: number };
 
 const MAP: Record<string, { id: string; name: string }> = {
     btc: { id: "bitcoin", name: "Bitcoin" },
@@ -15,19 +17,29 @@ const MAP: Record<string, { id: string; name: string }> = {
     sol: { id: "solana", name: "Solana" },
 };
 
-type DayRow = { date: string; price: number; sentiment: number };
-type Polarity = "Positive" | "Negative" | "Neutral";
-type Evidence = { source: "Reddit" | "News" | "Other"; title: string; url?: string; polarity: Polarity };
-type RouteParams = { params: Promise<{ symbol: string }> };
-
 const sentiment = new Sentiment();
 const toPolarity = (s: number): Polarity => (s > 1 ? "Positive" : s < -1 ? "Negative" : "Neutral");
+
+async function fetchJsonWithFallback(url: string, headers?: Record<string, string>) {
+    let res = await fetch(url, { headers, cache: "no-store" });
+    if (!res.ok) {
+        res = await fetch(url, { cache: "no-store" });
+    }
+    if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        return { ok: false as const, status: res.status, text };
+    }
+    const json = await res.json().catch(() => null);
+    return { ok: true as const, json };
+}
+
 
 const withTimeout = <T,>(p: Promise<T>, ms = 4500) =>
     Promise.race<T>([
         p,
         new Promise<T>((_, rej) => setTimeout(() => rej(new Error("timeout")), ms)) as any,
     ]);
+
 
 /** -------------------Real sources( no more fake news ) --------------------------------------------*/
 async function fetchRedditEvidence(q: string): Promise<Evidence[]> {
@@ -42,7 +54,7 @@ async function fetchRedditEvidence(q: string): Promise<Evidence[]> {
         .map((c: any) => c.data)
         .filter((d: any) => d?.title && !d.stickied && !d.locked);
 
-    return items.slice(0, 4).map((d: any) => {
+    return items.slice(0, 8).map((d: any) => {
         const score = sentiment.analyze(d.title).score;
         return {
             source: "Reddit",
@@ -102,54 +114,68 @@ export async function GET(
         }
 
         const cgHeaders = { "x-cg-demo-api-key": process.env.COINGECKO_API_KEY ?? "", Accept: "application/json",};
-        
-        let priceNow = 0, deltaPct = 0, deltaAbs = 0, score = 50;
 
-        try {
-            // 1) current + 24h change (for the unified score)
-            const simpleUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${meta.id}&vs_currencies=usd&include_24hr_change=true`;   
-            const simpleRes = await fetch(simpleUrl, { headers: cgHeaders, cache: "no-store" });
-            if (simpleRes.ok) {
-                const simple = await simpleRes.json() as Record<string, { usd: number; usd_24h_change: number }>;
-                priceNow = Number(simple[meta.id]?.usd ?? 0);
-                deltaPct = Number(simple[meta.id]?.usd_24h_change ?? 0);
-                deltaAbs = (priceNow * deltaPct) / 100;
-                score = scoreFromChange(deltaPct);
-            }
-        } catch { }
+        const simpleUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${meta.id}&vs_currencies=usd&include_24hr_change=true`;
+        const simple = await fetchJsonWithFallback(simpleUrl, cgHeaders);
+        
+        let priceNow = 0;
+        let deltaPct = 0;
+        if (simple.ok && simple.json && simple.json[meta.id]) {
+            priceNow = Number(simple.json[meta.id].usd ?? 0);
+            deltaPct = Number(simple.json[meta.id].usd_24h_change ?? 0);
+        }
+        const deltaAbs = (priceNow * deltaPct) / 100;
+        const score = scoreFromChange(deltaPct);
+
 
         // 2) 7d market chart (for the line)
+        const chartUrl = new URL(`https://api.coingecko.com/api/v3/coins/${meta.id}/market_chart`);
+        chartUrl.searchParams.set("vs_currency", "usd");
+        chartUrl.searchParams.set("days", "7");
+        chartUrl.searchParams.set("precision", "2");
+
+        let chartRes = await fetch(chartUrl.toString(), { headers: cgHeaders, cache: "no-store" });
+        if (!chartRes.ok) chartRes = await fetch(chartUrl.toString(), { cache: "no-store"});
+
         let sevenDay: DayRow[] = [];
-         let twentyFour: DayRow[] = [];
         let usedFallback = false;
 
-        try {
-            const chartUrl = new URL(`https://api.coingecko.com/api/v3/coins/${meta.id}/market_chart`);
-            chartUrl.searchParams.set("vs_currency", "usd");
-            chartUrl.searchParams.set("days", "7");
-            chartUrl.searchParams.set("precision", "2");
-            let chartRes = await fetch(chartUrl.toString(), { headers: cgHeaders, cache: "no-store" });
-            if (!chartRes.ok) chartRes = await fetch(chartUrl.toString(), { cache: "no-store"});
-            if (chartRes.ok) {
-                const chart = (await chartRes.json()) as { prices?: [number, number][] };
-                const pts = (chart.prices ?? [])
-                    .map(([ts, p]) => ({ ts: +ts, price: +p }))
-                    .filter(d => Number.isFinite(d.ts) && Number.isFinite(d.price))
-                    .sort((a, b) => a.ts - b.ts);
-                for (const d of pts) {
-                    if (!sevenDay.length || sevenDay[sevenDay.length - 1]!.date !== new Date(d.ts).toISOString()) {
-                        sevenDay.push({ date: new Date(d.ts).toISOString(), price: d.price, sentiment: 0.5 });
-                    }
-                }
-            }
-        } catch { usedFallback = true; }
-        
+        if (chartRes.ok) {
+            let chart: { prices?: [number, number][] } = {};
+            try {
+                chart = (await chartRes.json()) as any;
+            } catch {
 
-        if (sevenDay.length) {
-            twentyFour = sevenDay.slice(Math.max(0, sevenDay.length - 26));
+            }
+            if (Array.isArray(chart.prices) && chart.prices.length > 0) {
+                const pts = chart.prices
+                    .map(([ts, p]) => ({ ts: Number(ts), price: Number(p) }))
+                    .filter((d) => Number.isFinite(d.ts) && Number.isFinite(d.price))
+                    .sort((a, b) => a.ts - b.ts);
+
+                const dedup: { ts: number; price: number }[] = [];
+                for (const d of pts) if (!dedup.length || dedup[dedup.length - 1].ts !== d.ts) dedup.push(d);
+
+                sevenDay = dedup.map((d) => ({
+                    date: new Date(d.ts).toISOString(),
+                    price: d.price,
+                    sentiment: 0.5,
+                }));
+            } else {
+                usedFallback = true;
+            }
         } else {
             // Fallback: keep the page alive with a flat 7-day line around the latest price
             usedFallback = true;
+        }
+
+        let twentyFour: DayRow[] = [];
+        if (sevenDay.length > 0) {
+            // last ~26 points as a 24h slice
+            const lastN = 26;
+            twentyFour = sevenDay.slice(Math.max(0, sevenDay.length - lastN));
+        } else {
+            // synthetic line so UI isn't empty
             const now = Date.now();
             const startPrice = priceNow - (priceNow * deltaPct) / 100;
             twentyFour = Array.from({ length: 25 }, (_, i) => ({
@@ -166,7 +192,7 @@ export async function GET(
             }));
         }
 
-        // ------------------------------------------
+        // 4) Evidence ------------------------------------------
         const query = meta.name; // "Bitcoin", "Ethereum", "Solana"
         const [r1, r2, r3] = await Promise.allSettled([
             withTimeout(fetchRedditEvidence(query), 4500),
@@ -192,22 +218,32 @@ export async function GET(
             news: Math.round((counts.news / total) * 100),
             other: Math.round((counts.other / total) * 100),
         };
-        
+
+
+        // 5) Response
         return NextResponse.json({
-            symbol, name: meta.name,
-            priceUsd: priceNow, score, confidence: "High", deltaPct, deltaAbs,
-            twentyFour, sevenDay,
-            sourceMix, evidence,
-            debug: { usedFallback, evidenceCount: evidence.length },
+            symbol, 
+            name: meta.name,
+            priceUsd: priceNow, 
+            score, 
+            confidence: simple.ok ? "High" : "Low",
+            deltaPct, 
+            deltaAbs,
+            twentyFour, 
+            sevenDay,
+            sourceMix, 
+            evidence,
+            debug: { 
+                cgSimpleOk: simple.ok,
+                sevenDayPoints: sevenDay.length,
+                twentyFourPoints: twentyFour.length,
+                usedFallback,
+            },
         });
     } catch (e: any) {
-        return NextResponse.json({ 
-            symbol: "unknown", name: "Unknown", evidence: [],
-            twentyFour: [], sevenDay: [], sourceMix: { reddit: 0, news: 0, other: 0 },
-            error: String(e?.message ?? e),
-        });
+        return NextResponse.json(
+            { error: String(e?.message ?? e) },
+            { status: 200 }
+        );
     }
 }
-
-
-
