@@ -33,7 +33,7 @@ export default async function DiscoverPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {rows.map(t => (
           <Link key={t.symbol} href={`/token/${t.symbol}`}>
-            <div className="rounded-2xl bg-white/10 ring-1 ring-white/20 p-4 hover:bg-white/15 transition cursor-pointer">
+            <div className="rounded-2xl bg-white/30 ring-1 ring-white/20 p-4 hover:bg-white/10 transition cursor-pointer">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-lg font-semibold">

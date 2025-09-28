@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTokenDetail } from "@/hooks/useTokenDetail";
 import { createPortal } from "react-dom";
 import HeatmapTreemapPlotly from "./HeatmapTreemapPlotly";
+import HowItWorks from "./HowItWorks";
 
 const TOKEN_META: Record<string, { label: string; logo: string }> = {
     btc: { label: "Bitcoin (BTC)", logo: "/tokens/btc.png" },
@@ -244,12 +245,10 @@ export default function NavBar() {
                         >
                             ← Back
                         </button>
-                    ) : (
-                        <span className="text-slate-400">Home</span>
-                    )}
+                    ) : null}
                     <span className="text-slate-600">/</span>
                     <Link href="/" className="text-slate-300 hover:text-white cursor-pointer">
-                        Discover
+                        Home
                     </Link>
                     {isDetail && (
                         <>
@@ -260,16 +259,17 @@ export default function NavBar() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <Link href={`/explore?symbol=${(isDetail ? currentSymbol : "btc")}`} 
-                    className="text-slate-300 hover:text-white cursor-pointer">
-                        Explore
-                    </Link>
                     <button
-                        className="rounded-lg bg-slate-800 px-3 py-1.5 text-slate-200 hover:bg-slate-700 cursor-pointer"
+                        className="rounded-lg bg-indigo-800 px-3 py-1.5 text-slate-200 hover:bg-indigo-600 cursor-pointer"
                         onClick={() => setOpen(true)}
                     >
                         Compare
                     </button>
+                    <Link href={`/explore?symbol=${(isDetail ? currentSymbol : "btc")}`} 
+                    className="rounded-lg bg-green-800 px-3 py-1.5 text-slate-300  hover:bg-green-600 hover:text-white cursor-pointer">
+                        Explore
+                    </Link>
+                    <HowItWorks />
                 </div>
             </div>
 
@@ -319,13 +319,6 @@ export default function NavBar() {
                                             Who&apos;s Hot? <span aria-hidden>🔥</span> 
                                         </button>
                                     )}
-                                    <button
-                                        onClick={() => setOpen(false)}
-                                        className="text-slate-400 hover:text-white cursor-pointer"
-                                        aria-label="Close"
-                                    >
-                                        ✕
-                                    </button>
                                 </div>
                             </div>
 

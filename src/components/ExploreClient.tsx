@@ -56,23 +56,19 @@ export default function ExploreClient({ initialSymbol = "btc" }: { initialSymbol
 
     return (
         <div className="max-w-6xl mx-auto px-6 py-8 space-y-5">
-            {/* breadcrumbs / Header */}
-            <div className="flex items-center gap-2 text-sm text-slate-400">
-                <Link href="/" className="hover:text-white">Home</Link>
-                <span className="text-slate-600">/</span>
-                <span className="text-slate-200 font-medium">Discover</span>
-            </div>
-            
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-semibold">Explore</h1>
-                <button
-                    type="button"
-                    onClick={() => router.push(`/token/${symbol.toLowerCase()}`)}
-                    className="rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-slate-200"
-                >
-                    ← Back to token detail
-                </button>
-                <Link href="/" className="rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-slate-200">Back to Discover</Link>
+
+                <div className="flex gap-3">
+                    <button
+                        type="button"
+                        onClick={() => router.push(`/token/${symbol.toLowerCase()}`)}
+                        className="rounded-md bg-white/40 hover:bg-white/50 px-3 py-1.5 text-slate-200 cursor-pointer"
+                    >
+                        ← Token detail
+                    </button>
+                    <Link href="/" className="rounded-md bg-white/40 hover:bg-white/50 px-3 py-1.5 text-slate-200">Back to Discover</Link>
+                </div>
             </div>
         
             {/* Controls */}
