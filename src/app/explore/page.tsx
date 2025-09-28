@@ -1,27 +1,35 @@
 import { fetchOg } from "@/lib/og";
 import Image from "next/image";
 import Link from "next/link";
-import { headers } from "next/headers";
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 
+function baseUrl() {
+    if (process.env.NEXT_PUBLIC_BASE_URL?.trim()) return process.env.NEXT_PUBLIC_BASE_URL!.trim();
+    if (process.env.VERCEL_URL?.trim()) return `https://${process.env.VERCEL_URL.trim()}`;
+    return "http://localhost:3300";
+}
+
+
 async function getTokenDetail(symbol: string) {
+    const url = `${baseUrl()}/api/token/${symbol}?window=7d`;
     try {
-        const url = `${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/api/token/${symbol}?window=7d`;
         const res =  await fetch(url, { cache: "no-store", next: { revalidate: 60 * 15 } });
         if (!res.ok) {
+            console.error("EXPLORE getTokenDetail non-OK", res.status, await res.text());
             return { symbol, name: symbol.toUpperCase(), evidence: [] };
+        }
+        return res.json() as Promise<{
+            symbol: string;
+            name: string;
+            evidence: { title: string; url?: string; source: string; polarity: "Positive" | "Neutral" | "Negative"; publishedAt?: string }[];
+        }>;
+    } catch (e){
+        console.error("EXPLORE getTokenDetail threw", e)
+        return { symbol, name: symbol.toUpperCase(), evidence: [] };
     }
-    return res.json() as Promise<{
-        symbol: string;
-        name: string;
-        evidence: { title: string; url?: string; source: string; polarity: "Positive" | "Neutral" | "Negative"; publishedAt?: string }[];
-    }>;
-} catch {
-    return { symbol, name: symbol.toUpperCase(), evidence: [] };
-}
 
 }
 

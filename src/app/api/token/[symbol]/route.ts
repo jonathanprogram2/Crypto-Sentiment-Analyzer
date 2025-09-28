@@ -108,6 +108,7 @@ export async function GET(
     { params }: { params: Promise<{ symbol: string }> }
 ) {
     try {
+       
         const { symbol } = await params;
         const meta = MAP[symbol];
         if (!meta) { return NextResponse.json({ error: "Unknown symbol" }, { status: 400 });
