@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import HeadlineCard from "./HeadlineCard";
 import { useTokenDetail } from "@/hooks/useTokenDetail";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+
 
 
 type Pol = "Positive" | "Neutral" | "Negative";
@@ -58,17 +58,6 @@ export default function ExploreClient({ initialSymbol = "btc" }: { initialSymbol
         <div className="max-w-6xl mx-auto px-6 py-8 space-y-5">
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-semibold">Explore</h1>
-
-                <div className="flex gap-3">
-                    <button
-                        type="button"
-                        onClick={() => router.push(`/token/${symbol.toLowerCase()}`)}
-                        className="rounded-md bg-white/40 hover:bg-white/50 px-3 py-1.5 text-slate-200 cursor-pointer"
-                    >
-                        ← Token detail
-                    </button>
-                    <Link href="/" className="rounded-md bg-white/40 hover:bg-white/50 px-3 py-1.5 text-slate-200">Back to Discover</Link>
-                </div>
             </div>
         
             {/* Controls */}

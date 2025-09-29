@@ -26,7 +26,7 @@ export default function HowItWorks() {
         <>
             <button
                 onClick={() => setOpen(true)}
-                className="rounded-md bg-white/5 hover:bg-white/10 px-3 py-1.5 text-sm text-slate-200 cursor-pointer"
+                className="rounded-md bg-[#40422D] border border-white hover:bg-[#A1A671] hover:text-white px-3 py-1.5 text-sm text-slate-200 cursor-pointer"
             >
                 How it works
             </button>
@@ -46,21 +46,21 @@ export default function HowItWorks() {
                     if (!inside) setOpen(false);
                 }}
             >
-                <div className="bg-slate-900 rounded-2xl overflow-hidden ring-1 ring-white/10">
+                <div className="bg-[#8F8F7C] border-2 border-black rounded-2xl overflow-hidden ring-1 ring-white/10">
                     <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-                        <h2 className="text-lg font-semibold">How Crypto Sentiment Analyzer Works</h2>
+                        <h2 className="text-lg font-semibold text-black">How Crypto Sentiment Analyzer Works</h2>
                         <button
                             onClick={() => setOpen(false)}
-                            className="rounded-md px-2 py-1 text-slate-300 hover:bg-white/10 cursor-pointer"
+                            className="rounded-md px-2 py-1 text-black hover:bg-white/10 cursor-pointer"
                             aria-label="Close"
                         >
                            ✕ 
                         </button>
                     </div>
 
-                    <div className="p-6 space-y-6 text-[1.05rem] leading-relaxed">
+                    <div className="p-6 space-y-6 text-[1.05rem] leading-relaxed text-black">
                         <section>
-                            <h3 className="font-semibold mb-1">Overview</h3>
+                            <h3 className="font-semibold mb-1 text-black">Overview</h3>
                             <p>
                                 We grab fresh headlines about <b>BTC</b>, <b>ETH</b>, and <b>SOL</b>, guess the 
                                 headline's mood, and combine that with the last 24-hour price move. You get a simple, 
@@ -129,7 +129,7 @@ export default function HowItWorks() {
                     <div className="px-6 py-4 border-t border-white/10 flex justify-end">
                         <button
                             onClick={() => setOpen(false)}
-                            className="rounded-md bg-white/10 hover:bg-white/20 px-5 py-2 text-[1.05rem] cursor-pointer"
+                            className="rounded-md bg-black hover:bg-white/20 px-5 py-2 text-[1.05rem] cursor-pointer"
                         >
                             Got it?
                         </button>

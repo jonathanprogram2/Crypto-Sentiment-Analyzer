@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import React from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useTokenDetail } from "@/hooks/useTokenDetail";
 import { createPortal } from "react-dom";
@@ -204,6 +204,7 @@ function HeatmapCompare({ left, right }: { left: string; right: string }) {
 
 export default function NavBar() {
     const pathname = usePathname();
+    const search = useSearchParams();
     const router = useRouter();
     const [open, setOpen] = useState(false);
     const [showHeatmap, setShowHeatmap] = useState(false);
@@ -217,6 +218,10 @@ export default function NavBar() {
         const last = pathname!.split("/").filter(Boolean).pop()!;
         return last.toLowerCase();
     }, [pathname, isDetail]);
+
+    const isExplore = pathname?.startsWith("/explore");
+    const exploreSymbol = (search?.get("symbol") || "btc").toLowerCase();
+    const tokenDetailHref = `/token/${isExplore ? exploreSymbol : currentSymbol}`;
     
 
     const [rightA, setRightA] = useState<string>("eth");
@@ -235,38 +240,48 @@ export default function NavBar() {
     const crumb = isDetail ? pathname?.split("/").filter(Boolean).slice(-1)[0]?.toUpperCase() : null;
 
     return (
-        <div className="sticky top-0 z-40 w-full bg-slate-900/70 backdrop-blur border-b border-white/10">
+        <div className="sticky top-0 z-40 w-full bg-[#7A6C21] backdrop-blur border-b border-white/10">
             <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     {isDetail ? (
                         <button
-                            className="text-slate-300 hover:text-white cursor-pointer"
+                            className="text-black hover:text-white cursor-pointer font-extrabold"
                             onClick={() => router.back()}
                         >
                             ← Back
                         </button>
                     ) : null}
-                    <span className="text-slate-600">/</span>
-                    <Link href="/" className="text-slate-300 hover:text-white cursor-pointer">
+                    <span className="text-black">/</span>
+                    <Link href="/" className="text-black hover:text-white cursor-pointer font-extrabold">
                         Home
                     </Link>
-                    {isDetail && (
+                    {(isDetail || isExplore) && (
                         <>
-                            <span className="text-slate-600">/</span>
-                            <span className="text-slate-200 font-medium">{crumb}</span>
+                            <span className="text-black">/</span>
+                            {isDetail ? (
+                                <span className="text-slate-200 font-sans">{crumb}</span>
+                            ) : (
+                                <Link
+                                    href={tokenDetailHref}
+                                    className="text-black hover:text-white cursor-pointer font-extrabold"
+                                    title="Go to selected token detail"
+                                >
+                                    Token detail
+                                </Link>
+                            )}
                         </>
                     )}
                 </div>
 
                 <div className="flex items-center gap-4">
                     <button
-                        className="rounded-lg bg-indigo-800 px-3 py-1.5 text-slate-200 hover:bg-indigo-600 cursor-pointer"
+                        className="rounded-lg bg-black border-white border px-3 py-1.5 text-slate-200 hover:bg-[#A8A8A8] cursor-pointer"
                         onClick={() => setOpen(true)}
                     >
                         Compare
                     </button>
                     <Link href={`/explore?symbol=${(isDetail ? currentSymbol : "btc")}`} 
-                    className="rounded-lg bg-green-800 px-3 py-1.5 text-slate-300  hover:bg-green-600 hover:text-white cursor-pointer">
+                    className="rounded-lg bg-[#538DBD] px-3 py-1.5 border border-white text-slate-300  hover:bg-[#748DB0] hover:text-white cursor-pointer">
                         Explore
                     </Link>
                     <HowItWorks />
