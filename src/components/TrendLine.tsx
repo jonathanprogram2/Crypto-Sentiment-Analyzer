@@ -25,7 +25,7 @@ const GoldOnlyTooltip = ({
     return (
         <div 
             style={{
-                background: "rgba(15,23,42,.95)",
+                background: "#000000",
                 border: "1px solid rgba(255,255,255,.1)",
                 borderRadius: 12,
                 padding: 12,

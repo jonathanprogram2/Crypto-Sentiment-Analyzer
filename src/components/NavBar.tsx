@@ -304,7 +304,7 @@ export default function NavBar() {
                             aria-labelledby="compare-title"
                             className="
                                 w-[92vw] max-w-7xl 
-                                rounded-2xl bg-slate-900 ring-1 ring-white/10 shadow-2xl 
+                                rounded-2xl bg-[#3B3818] ring-1 ring-white/10 shadow-2xl 
                                 max-h-[calc(100vh-2rem)] overflow-hidden flex flex-col
                             "
                         >
@@ -341,7 +341,7 @@ export default function NavBar() {
                                 {/* Left (locked to current) */}
                                 <div>
                                     <label className="block text-xs text-slate-400 mb-1"> Left (current)</label>
-                                    <div className="w-full rounded-md bg-slate-800 text-slate-100 px-3 py-2 ring-1 ring-white/10 cursor-not-allowed opacity-75">
+                                    <div className="w-full rounded-md bg-black text-slate-100 px-3 py-2 ring-1 ring-white/10 cursor-not-allowed opacity-75">
                                         {TOKEN_META[currentSymbol]?.label ?? currentSymbol.toUpperCase()}
                                     </div>
                                 </div>
@@ -350,7 +350,7 @@ export default function NavBar() {
                                 <div>
                                     <label className="block text-xs text-slate-400 mb-1">Right A</label>
                                     <select
-                                        className="w-full rounded-md bg-slate-800 text-slate-100 px-3 py-2 ring-1 ring-white/10"
+                                        className="w-full rounded-md bg-black text-slate-100 px-3 py-2 ring-1 ring-white/10 cursor-pointer"
                                         value={rightA}
                                         onChange={(e) => setRightA(e.target.value)}
                                     >
@@ -379,7 +379,7 @@ export default function NavBar() {
                                         />
                                     </div>
                                 ) : (
-                                    <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5 min-h-0 flex-1 overflow-y-auto">
+                                    <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5 min-h-0 flex-1 overflow-y-auto bg-black">
                                         <ComparePane symbol={currentSymbol}/>
                                         <ComparePane symbol={rightA}/>
                                     </div>
@@ -390,7 +390,7 @@ export default function NavBar() {
                             <div className="px-5 py-3 border-t border-white/10 text-right">
                                 <button
                                     onClick={() => setOpen(false)}
-                                    className="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-white cursor-pointer"
+                                    className="rounded-lg bg-black hover:bg-[#282821] px-4 py-2 text-white cursor-pointer"
                                 >
                                     Done
                                 </button>

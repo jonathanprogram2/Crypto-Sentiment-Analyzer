@@ -111,7 +111,7 @@ export default function HeatmapTreemapPlotly({
     }), []);
 
     return (
-        <div className="w-full h-[480px] rounded-xl bg-slate-900/60 ring-1 ring-white/10 p-2">
+        <div className="w-full h-[480px] rounded-xl bg-black ring-1 ring-white/10 p-2">
             <Plot data={data as any} layout={layout as any} config={config as any} style={{ width: "100%", height: "100%" }}/>
             <p className="mt-2 text-xs text-slate-400">
                 Tile size = number of items in bucket (last 7d). Colors: Positive (green), Neutral (slate), Negative (red).

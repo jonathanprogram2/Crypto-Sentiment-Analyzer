@@ -297,7 +297,7 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
 
                                 {/* Hover legend (appears when hovering the score) */}
                                 <div className="pointer-events-none opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-150 absolute right-0 top-full mt-2 z-10">
-                                    <div className="w-64 rounded-xl bg-slate-900/95 ring-1 ring-white/10 p-3 shadow-xl">
+                                    <div className="w-64 rounded-xl bg-black ring-1 ring-white/10 p-3 shadow-xl">
                                         <p className="text-xs font-semibold text-slate-200 mb-2">Score legend</p>
                                         <ul className="space-y-1 text-xs text-slate-300">
                                             <li className="flex items-center gap-2">
@@ -472,7 +472,7 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                     />
 
                     <div className="absolute inset-0 flex items-center justify-center p-4">
-                        <div className="w-full max-w-md rounded-2xl bg-slate-900 ring-1 ring-white/10 p-6 shadow-xl">
+                        <div className="w-full max-w-xl rounded-2xl bg-black ring-1 ring-white/10 p-6 shadow-xl">
                             <div className="flex items-center justify-between mb-3">
                                 <h4 id="score-modal-title" className="text-lg font-semibold">Why this score?</h4>
                                 <button 
@@ -552,7 +552,7 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                                 <button 
                                     type="button" 
                                     onClick={() => setModalOpen(false)} 
-                                    className=" cursor-pointer rounded-lg bg-indigo-600 hover:bg-indigo-500 px-4 py-2"
+                                    className=" cursor-pointer rounded-lg bg-white text-black hover:bg-gray-400 px-4 py-2"
                                 >
                                     Close
                                 </button>
