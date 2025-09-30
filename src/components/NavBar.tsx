@@ -314,7 +314,7 @@ export default function NavBar() {
                                     {showHeatmap ? (
                                         <button
                                             onClick={() => setShowHeatmap(false)}
-                                            className="rounded-md bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-slate-200 cursor-pointer"
+                                            className="rounded-md bg-black hover:bg-[#282821] px-3 py-1.5 text-slate-200 cursor-pointer"
                                         >
                                             ← Back
                                         </button>
