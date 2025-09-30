@@ -63,12 +63,12 @@ export default function ExploreClient({ initialSymbol = "btc" }: { initialSymbol
             {/* Controls */}
             <div className="flex flex-wrap items-center gap-3">
                 <select value={symbol} onChange={e=>setSymbol(e.target.value)}
-                        className="bg-slate-800 ring-1 ring-white/10 rounded px-2 py-1 text-slate-100">
+                        className="bg-slate-800 ring-1 ring-white/10 rounded px-2 py-1 text-slate-100 cursor-pointer">
                     {TOKENS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
 
                 <select value={source} onChange={e=>setSource(e.target.value as any)}
-                        className="bg-slate-800 ring-1 ring-white/10 rounded px-2 py-1 text-slate-100">
+                        className="bg-slate-800 ring-1 ring-white/10 rounded px-2 py-1 text-slate-100 cursor-pointer">
                     <option>All</option><option>Reddit</option><option>News</option><option>Other</option>
                 </select>
 
