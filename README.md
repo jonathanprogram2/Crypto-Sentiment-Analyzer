@@ -1,139 +1,210 @@
 # Crypto Sentiment Analyzer
 
-> A Next.js proof-of-concept that aggregates crypto sentiment signals (news, Reddit, RSS/other) and surfaces a per-token score, drivers, and an evidence feed.
+A polished MVP built with **Next.js (App Router) + TypeScript** that pulls fresh crypto headlines, runs lightweight **headline sentiment**, blends it with **price momentum**, and presents a clean, explorable UI:
+
+- **Token Detail** (scores, 24h/7d momentum, source mix, evidence feed)
+- **Explore** (thumbnail news hub with filters + OG previews)
+- **Compare** (side-by-side score/price/evidence) + **Who’s Hot?** heatmap
+- **“How it works”** modal (human-readable overview)
+
+> Demo-focused, read-only tool. No accounts. No tracking.  
 
 ---
-# Screenshots
+## 🚀 Live Demo (Vercel)
 
-- Token Detail – **24h**
-<img width="2526" height="1395" alt="Screenshot 2025-09-11 132946" src="https://github.com/user-attachments/assets/fb4e5b6f-c0f4-4f35-a03f-145ebcf89ef5" />
+The app is deployed on Vercel:
 
-- Token Detail – **7d**
-<img width="2532" height="1405" alt="image" src="https://github.com/user-attachments/assets/f20a831e-4c90-4af6-a3d4-0969c6b8ba7d" />
+### URL
+https://cryptosenanalyzer.vercel.app/
 
-- “Why this score?” modal
-<img width="1050" height="758" alt="Screenshot 2025-09-11 135422" src="https://github.com/user-attachments/assets/95c85ad0-7295-455f-92d6-b812748a2d71" />
+### Demo Video
+
+> A fast walkthrough of my student-built MVP that scores crypto sentiment and surfaces real evidence in one place.
+
+[▶ Watch the demo video](https://youtu.be/XeiHBWU59e8)
+
+**Chapters**
+ - 0:00 Intro
+ - 00:30 What It Does
+ - 1:10 Live Demo
+ - 6:55 Code Walkthrough
+ - 10:45 Edge Cases & Constraints
+ - 11:52 What's Next
+ - 12:12 Close
 
 ---
 
-## What’s included 
+## Table of contents
 
-- ✅ **Token Detail** page (`/token/[symbol]`) using **SWR**
-- ✅ **Mock API** route: `/api/token/[symbol]` (serves `public/sample-btc.json`)
-- ✅ **24h/7d toggle** (+ pointer cursor)
-- ✅ **Score** badge + **Δ (window)** ▲/▼ overlay
-- ✅ **Drivers & Source mix**
-- ✅ **Evidence Feed** with polarity chips (Positive/Negative/Neutral)
-- ✅ **“Why this score?”** modal (a11y: `aria-modal`, overlay click to close)
-- ✅ **Navy theme** via Tailwind (cards: `bg-white/10 ring-white/20`)
-- ✅ **Chart.js** line chart with:
-  - 24h: **12-hour time** on X axis (e.g., `4:00 PM`)
-  - 7d: **MMM d** on X axis (e.g., `Sep 7`)
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Quick start](#quick-start)
+- [Tech stack](#tech-stack)
+- [Architecture & data flow](#architecture--data-flow)
+- [Key routes & API](#key-routes--api)
+- [Scoring model (high level)](#scoring-model-high-level)
+- [Project structure](#project-structure)
+- [Accessibility & UX](#accessibility--ux)
+- [Roadmap / nice-to-haves](#roadmap--nice-to-haves)
+- [License](#license)
 
+---
+
+## Features
+
+### Product
+- ✅ **Discover → Token Detail**  
+  Per-token score, 24h/7d trend, source mix, drivers, and an evidence feed with sentiment chips.
+- ✅ **Explore hub** (`/explore?symbol=btc`)  
+  Curated stream from the last ~7 days with **OG thumbnail/description** enrichments where available.
+- ✅ **Compare modal** (global in the navbar)  
+  Side-by-side **score, price, Δ**, and **latest evidence** for two tokens.  
+  Bonus: **Who’s Hot?** 🔥 quick heatmap ranking by recent momentum.
+- ✅ **“How it works”**  
+  Friendly, centered modal that explains sources, scoring, compare, and heatmap in plain language.
+
+### Data
+- ✅ **Real feeds** (best-effort public sources):  
+  **Reddit** (search, last week), **Google News RSS** (7d), **Hacker News (Algolia)**.  
+  Optional: **CoinDesk/CoinTelegraph RSS** for richer headlines.
+- ✅ **OpenGraph enrichment**  
+  Fetches OG image/description for the top N Explore items to improve scannability.
+- ✅ **Price / momentum**  
+  Uses CoinGecko endpoints (with graceful fallback) to display price and compute Δ.
+
+### Engineering
+- ✅ **Next.js App Router** with server components + client islands  
+- ✅ **TypeScript** end-to-end  
+- ✅ **API routes** for token data, explore enrichment, and health checks  
+- ✅ **Tailwind** + small utility components for a cohesive dark UI  
+- ✅ **Build diagnostics**: `/api/health` returns base URL & simple sanity signals
+
+---
+
+## Screenshots
+
+**Home**  
+<img width="2526" height="1399" alt="Screenshot 2025-09-29 195329" src="https://github.com/user-attachments/assets/deb0541d-1191-4050-928b-0f6e39af453a" />
+
+**Token Detail – 24h / 7d**  
+<img width="2505" height="1405" alt="Screenshot 2025-09-29 195528" src="https://github.com/user-attachments/assets/c622be9f-fe2c-4b94-a02a-861150c3d3fb" />
+
+**Explore (news hub)**  
+<img width="2500" height="1396" alt="Screenshot 2025-09-29 195734" src="https://github.com/user-attachments/assets/833e40b6-d6f8-4dbb-8306-773176418fc8" />
+
+**Compare modal**
+<img width="2420" height="1261" alt="Screenshot 2025-09-30 111604" src="https://github.com/user-attachments/assets/c700a8e2-e1b3-4ecf-84e4-07394e755a19" />
+
+**“Who’s Hot?” heatmap**  
+<img width="2100" height="1254" alt="Screenshot 2025-09-30 113852" src="https://github.com/user-attachments/assets/878e7526-bab3-415f-aadd-092da537b5cd" />
+
+**“How it works” modal**  
+<img width="1239" height="1386" alt="Screenshot 2025-09-30 114201" src="https://github.com/user-attachments/assets/7c6643f0-61f1-4b78-a7ae-9a9c638b511e" />
 
 ---
 
 ## Quick start
 
-~~~bash
+```bash
 # 1) install
 npm install
 
-# 2) dev
+# 2) dev server
 npm run dev
-# app: http://localhost:3000 
-
-~~~
-
-Node 18+ recommended.
-
+# -> http://localhost:3000
+```
 ---
-
 ## Tech stack
+ - Next.js 15 (App Router) + TypeScript
+ - React Server Components + client islands
+ - Tailwind CSS
+ - Plotly treemap (heatmap widget) + lightweight SVG/DOM for the rest
+ - Cheerio for OG extraction on Explore enrich
+ - fetch with timeouts and defensive fallbacks
+ - Deployed on Vercel
+---
+## Key routes & API
+### App pages
+ - GET / — Discover (entry)
+ - GET /token/[symbol] — Token detail (BTC/ETH/SOL supported OOTB)
+ - GET /explore?symbol=btc — Explore news hub
+ - **Compare** — modal available from the navbar on any page
 
-- **Next.js (App Router) + TypeScript**
-- **SWR** for data fetching
-- **API Routes** (`/api/token/[symbol]`)
-- **Chart.js (react-chartjs-2)** for the trend line
-- **Tailwind CSS** for styling
+### API routes (internal)
+ - GET /api/token/[symbol] — Core data for Token Detail & Compare
+Returns: pricing, score, Δ, source mix, 24h/7d arrays, and latest evidence.
+ - GET /api/health — Simple runtime diagnostics (used to verify Vercel settings)
+ - GET /api/enrich — Fetch OG meta for Explore items (called server-side)
 
 ---
+## API response shape (simplified)
+```
+type Polarity = "Positive" | "Neutral" | "Negative";
+type DayRow   = { date: string; price: number; sentiment: number };
+type Evidence = { source: "Reddit" | "News" | "Other"; title: string; url?: string; polarity: Polarity; };
 
+type TokenData = {
+  symbol: string;
+  name: string;
+  priceUsd: number;
+  deltaPct: number;  // 24h Δ%
+  deltaAbs: number;  // absolute change
+  score: number;     // 0-100 unified score from Δ%
+  confidence: "High" | "Low";
+  twentyFour: DayRow[];
+  sevenDay: DayRow[];
+  sourceMix: { reddit: number; news: number; other: number }; // %
+  evidence: Evidence[]; // latest mixed feed
+  debug?: Record<string, unknown>;
+};
+```
 ---
-
-## Project structure (key bits)
-
-~~~text
+## Scoring model (high level)
+ - **Headline Mood**: rule-based on titles only → Positive / Neutral / Negative (shown per evidence item).
+ - **Unified Score (0–100)**: maps **24h price change** to a comparable score so tokens are easy to stack-rank.
+ - **Heatmap**: shows per-token **counts** of positive/neutral/negative evidence in the last 7 days.
+ - The value is **directional** and **demo-oriented** — not financial advice.
+---
+## Project structure
+```
 src/
   app/
     api/
-      token/
-        [symbol]/
-          route.ts          # returns mock JSON for now
-    token/
-      [symbol]/
-        page.tsx            # loads TokenDetailClient with params.symbol
-    layout.tsx              # body bg + globals import
-    globals.css             # @tailwind base; components; utilities
+      discover/route.ts
+      enrich/route.ts           # OG enrichment helper
+      health/route.ts           # diagnostics
+      token/[symbol]/route.ts   # token data aggregation (price + headlines)
+    explore/page.tsx            # Explore hub (server component + enrich calls)
+    token/[symbol]/page.tsx     # Token detail
+    layout.tsx                  # global shell and navbar
+    globals.css                 # Tailwind & theme
+    page.tsx
   components/
-    TokenDetailClient.tsx   # page UI shell
-    TrendLine.tsx           # chart.js line chart
+    NavBar.tsx                  # global nav + Compare modal + HowItWorks
+    TokenDetailClient.tsx       # interactive parts on token detail
+    HeadlineCard.tsx            # explore news tiles
+    HeatmapTreemapPlotly.tsx    # "Who's Hot?" widget
+    HowItWorks.tsx              # centered help modal
+    ScoreLegend.tsx
+    ExploreClient.tsx
+    Trendline.tsx
   hooks/
-    useTokenDetail.ts       # SWR hook (fetches /api/token/[symbol])
-
-public/
-  sample-btc.json           # mock response used by /api/token/btc
-~~~
-
+    useTokenDetail.ts           # client fetch helper for compare/details
+  lib/
+    og.ts                       # cheerio-based OG extractor
+    scoring.ts                  # Δ% -> score mapping
+    tokens.ts                   # supported token metadata
+```
 ---
-
-## API shape
-
-The Token Detail UI expects this shape (served by `/api/token/:symbol`):
-
-~~~ts
-type DayRow   = { date: string; price: number; sentiment: number };
-type Evidence = { source: string; title: string; polarity: "Positive"|"Negative"|"Neutral"; url?: string };
-
-type TokenData = {
-  symbol: string; name: string; score: number; confidence: string;
-  scoreReasons: string[];
-  twentyFour: DayRow[];
-  sevenDay: DayRow[];
-  drivers: { positive: string[]; negative: string[] };
-  sourceMix: { reddit: number; news: number; other: number };
-  evidence: Evidence[];
-};
-~~~
-
+## Roadmap / nice-to-haves
+ - More tokens + user-editable watchlist
+ - Smarter sentiment (body text, entity awareness)
+ - Source filters & alerts
+ - Persisted preferences (local storage)
+ - Pagination & infinite scroll on Explore
+ - Better rate-limit handling & caching layer (KV/Edge)
 ---
-
-## How it works (at a glance)
-
-- `useTokenDetail(symbol, windowSel)` uses **SWR** to hit `/api/token/:symbol`.
-- `TrendLine` receives `rows` and formats the X-axis:
-  - `24h` → 12-hour times (AM/PM)
-  - `7d` → abbreviated date (`Sep 7`)
-- “Why this score?” pulls from `scoreReasons[]` and opens a modal (`aria-modal="true"`).
-
----
-
-## Styling / Theme
-
-- Global navy background is set on `<body>` in `src/app/layout.tsx`:
-
-~~~tsx
-<body className="min-h-screen bg-[#0b1220] text-slate-100">
-~~~
-
-- Card contrast: `bg-white/10 ring-white/20`
-- Pointer cursors added to 24h/7d toggle and “Why this score?”
-
----
-
-
-## License
-
+### License
 MIT
 
 ---
