@@ -3,7 +3,7 @@
 A polished MVP built with **Next.js (App Router) + TypeScript** that pulls fresh crypto headlines, runs lightweight **headline sentiment**, blends it with **price momentum**, and presents a clean, explorable UI:
 
 - **Token Detail** (scores, 24h/7d momentum, source mix, evidence feed)
-- **Explore** (thumbnail news hub with filters + OG previews)
+- **Explore** (single-column news hub with OG previews)
 - **Compare** (side-by-side score/price/evidence) + **Who’s Hot?** heatmap
 - **“How it works”** modal (human-readable overview)
 
@@ -40,14 +40,16 @@ https://cryptosenanalyzer.vercel.app/
 - [Screenshots](#screenshots)
 - [Quick start](#quick-start)
 - [Tech stack](#tech-stack)
-- [Architecture & data flow](#architecture--data-flow)
 - [Key routes & API](#key-routes--api)
 - [Scoring model (high level)](#scoring-model-high-level)
 - [Project structure](#project-structure)
-- [Accessibility & UX](#accessibility--ux)
 - [Roadmap / nice-to-haves](#roadmap--nice-to-haves)
 - [License](#license)
 
+---
+## Supported Tokens (MVP)
+
+- **BTC**, **ETH**, **SOL**
 ---
 
 ## Features
@@ -187,7 +189,7 @@ src/
     HowItWorks.tsx              # centered help modal
     ScoreLegend.tsx
     ExploreClient.tsx
-    Trendline.tsx
+    TrendLine.tsx
   hooks/
     useTokenDetail.ts           # client fetch helper for compare/details
   lib/
@@ -204,6 +206,30 @@ src/
  - Pagination & infinite scroll on Explore
  - Better rate-limit handling & caching layer (KV/Edge)
 ---
+## Troubleshooting
+
+- **Explore shows no items**  
+  The feed only shows recent items (last ~7 days). Try BTC first; BTC has the richest feed.
+  Also ensure your local base URL is reachable by server components (`NEXT_PUBLIC_BASE_URL=http://localhost:3000`).
+
+- **Rate limits from APIs**  
+  Public endpoints (Reddit/Google News/HN) may throttle. The app degrades gracefully; try again after a minute.
+
+- **OG thumbnails missing**  
+  Some sites block scraping or omit OG tags. The article still appears without an image.
+
+- **Prices/trend fallback**  
+  If CoinGecko is unavailable, the app renders a minimal synthetic trend so UI isn’t empty.
+
+---
+## Attribution & Fair Use
+
+Headlines/snippets are sourced from public endpoints (Reddit, Google News RSS, HN/Algolia).
+Thumbnails/descriptions are derived from OpenGraph metadata when available. This project is
+an educational MVP and does not store or republish full articles.
+
+---
+
 ### License
 MIT
 
