@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { headers } from "next/headers";
+import HomeHero from "@/components/HomeHero";
 
 type Row = { symbol: string; name: string; score: number; delta24: number };
 
@@ -27,32 +27,8 @@ export default async function DiscoverPage() {
   const rows = await getData();
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10">
-      <h1 className="text-3xl font-semibold mb-6">Home</h1>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {rows.map(t => (
-          <Link key={t.symbol} href={`/token/${t.symbol}`}>
-            <div className="rounded-2xl bg-white/30 ring-1 ring-white/20 p-4 hover:bg-white/10 transition cursor-pointer">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-lg font-semibold">
-                    {t.name} <span className="text-slate-400">({t.symbol.toUpperCase()})</span>
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="rounded-full border border-yellow-400/30 bg-yellow-400/10 px-3 py-1 text-yellow-200 font-semibold">
-                    {t.score}
-                  </span>
-                  <span className={t.delta24 >= 0 ? "text-emerald-300" : "text-rose-300"}>
-                    {t.delta24 >= 0 ? "▲" : "▼"} {Math.abs(t.delta24).toFixed(2)}%
-                  </span>
-                </div>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </div>
+    <main>
+      <HomeHero tokens={rows} />
+    </main>
   );
 }

@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className="min-h-screen bg-[#000000] text-slate-100 antialiased"
+        className="min-h-screen bg-color text-slate-100 antialiased"
       >
         <Suspense fallback={null}>
           <NavBar />

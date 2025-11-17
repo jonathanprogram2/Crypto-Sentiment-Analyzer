@@ -240,7 +240,7 @@ export default function NavBar() {
     const crumb = isDetail ? pathname?.split("/").filter(Boolean).slice(-1)[0]?.toUpperCase() : null;
 
     return (
-        <div className="sticky top-0 z-40 w-full bg-[#7A6C21] backdrop-blur border-b border-white/10">
+        <div className="sticky top-0 z-40 w-full nav-color backdrop-blur border-b border-white/10">
             <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     {isDetail ? (
@@ -273,17 +273,26 @@ export default function NavBar() {
                     )}
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                     <button
-                        className="rounded-lg bg-black border-white border px-3 py-1.5 text-slate-200 hover:bg-[#A8A8A8] cursor-pointer"
+                        className="nav-shimmer-btn nav-shimmer-neutral"
                         onClick={() => setOpen(true)}
+                        type="button"
                     >
-                        Compare
+                        <span className="nav-shimmer-text">Compare</span>
+                        <span className="nav-shimmer-layer" />
                     </button>
-                    <Link href={`/explore?symbol=${(isDetail ? currentSymbol : "btc")}`} 
-                    className="rounded-lg bg-[#538DBD] px-3 py-1.5 border border-white text-slate-300  hover:bg-[#748DB0] hover:text-white cursor-pointer">
-                        Explore
-                    </Link>
+
+                    <button
+                        className="nav-shimmer-btn nav-shimmer-primary"
+                        type="button"
+                        onClick={() => 
+                            router.push(`/explore?symbol=${(isDetail ? currentSymbol : "btc")}`)
+                        }
+                    >
+                        <span className="nav-shimmer-text">Explore</span>
+                        <span className="nav-shimmer-layer" />
+                    </button>
                     <HowItWorks />
                 </div>
             </div>
@@ -303,13 +312,15 @@ export default function NavBar() {
                             aria-modal="true" 
                             aria-labelledby="compare-title"
                             className="
+                                compare-neon-modal
                                 w-[92vw] max-w-7xl 
-                                rounded-2xl bg-[#3B3818] ring-1 ring-white/10 shadow-2xl 
-                                max-h-[calc(100vh-2rem)] overflow-hidden flex flex-col
+                                max-h-[calc(100vh-2rem)] 
+                                overflow-hidden flex flex-col
+                                text-slate-100
                             "
                         >
                             {/* Modal header */}
-                            <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between">
+                            <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between bg-black/20 backdrop-blur-sm">
                                 <div className="flex items-center gap-3">
                                     {showHeatmap ? (
                                         <button
@@ -387,7 +398,7 @@ export default function NavBar() {
                             </div>
 
                             {/* Footer */}
-                            <div className="px-5 py-3 border-t border-white/10 text-right">
+                            <div className="px-5 py-3 border-t border-white/10 bg-black/25 backdrop-blur-sm text-right">
                                 <button
                                     onClick={() => setOpen(false)}
                                     className="rounded-lg bg-black hover:bg-[#282821] px-4 py-2 text-white cursor-pointer"
