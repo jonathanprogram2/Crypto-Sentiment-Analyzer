@@ -144,6 +144,7 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
     const [windowSel, setWindowSel] = useState<"24h" | "7d">("7d");
     const [sourceSel, setSourceSel] = useState<"All" | "Reddit" | "News" | "Other">("All");
     const [modalOpen, setModalOpen] = useState(false);
+    const [mobileTimeOpen, setMobileTimeOpen] = useState(false);
     const { data, error, isLoading } = useTokenDetail(symbol, windowSel) as {
         data?: TokenData;
         error?: unknown;
@@ -202,8 +203,9 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
 
 
     return (
-        <div className="max-w-6xl mx-auto px-6 py-10">
-            <header className="flex items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto px-4 py-6 sm:px-6 sm:py-10">
+            {/* Page Header */}
+            <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 {/* Left: Logo + name */}
                 <div className="flex items-center gap-3">
                     {(() => {
@@ -213,29 +215,38 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                             <img
                                 src={meta.logo}
                                 alt={`${meta.label} logo`}
-                                className="h-10 w-10 rounded-full ring-1 ring-white/10 object-contain bg-slate-800"
+                                className="h-9 w-9 sm:h-10 sm:w-10 rounded-full ring-1 ring-white/10 object-contain bg-slate-800 mt-1"
                                 onError={(e) => ((e.currentTarget as HTMLImageElement).style.visibility = "hidden")}
                             />
                         ) : null;
                     })()}
-                    <div>
-                        <h1 className="text-4xl font-semibold tracking-tight">
-                            {data.name} <span className="text-slate-400">({data.symbol})</span>
+                    <div className="space-y-1">
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight">
+                            {data.name}{" "} 
+                            <span className="text-slate-400 text-xl sm:text-2xl">
+                                ({data.symbol})
+                            </span>
                         </h1>
-                        <p className="text-base text-slate-400 mt-1">
+                        <p className="text-sm sm:text-base text-slate-400">
                             Price:&nbsp;
                             <span className="font-medium text-white">
                                 {typeof data?.priceUsd === "number" ? `$${data.priceUsd.toLocaleString()}` : "—"}
                             </span>
-                            <span className="mx-3 text-slate-500">•</span>
-                            Confidence: <span className={`${conf.cls} font-medium`}>{conf.label}</span>
+                            <span className="mx-2 text-slate-500">•</span>
+                            Confidence: 
+                            <span className={`${conf.cls} font-medium`}> {conf.label}</span>
                         </p>
                     </div>
                 </div>
                 
-                <div className="flex items-center gap-3">
-                    {/* time window toggle */}
-                    <div className="hidden md:inline-flex rounded-full bg-slate-800/60 ring-1 ring-white/10 p-1" role="tablist" aria-label="Time window">
+                {/* Right: time controls + why link */}
+                <div className="flex items-center self-start gap-3 md:self-auto">
+                    {/* desktop toggle */}
+                    <div 
+                        className="hidden md:inline-flex rounded-full bg-slate-800/60 ring-1 ring-white/10 p-1" 
+                        role="tablist" 
+                        aria-label="Time window"
+                    >
                         {(["24h","7d"] as const).map(v => (
                             <button
                                 key={v}
@@ -254,80 +265,115 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                     </div>
 
                     {/* Select (mobile) */}
-                    <label className="md:hidden text-slate-300 text-sm">
-                        Time:
-                        <select
-                            value={windowSel}
-                            onChange={(e) => setWindowSel(e.target.value as "24h" | "7d")}
-                            className="ml-2 bg-slate-800/60 ring-1 ring-white/10 rounded-md px-2 py-1 text-slate-100"
+                    <div className="relative md:hidden">
+                        <button
+                            type="button"
+                            onClick={() => setMobileTimeOpen((v) => !v)}
+                            className="cursor-pointer text-slate-300 text-sm bg-slate-800/60 ring-1 ring-white/10 rounded-md px-3 py-1 flex items-center gap-2"
                         >
-                            <option value="24h">24h</option>
-                            <option value="7d">7d</option>
-                        </select>
-                    </label>
+                            <span>Time:</span>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-black/40 px-2 py-0.5 text-xs text-slate-100">
+                                {windowSel}
+                                <span aria-hidden>▾</span>
+                            </span>
+                        </button>
 
-                    
-                    {/* why this score link */}
-                    <button
-                        onClick={() => setModalOpen(true)}
-                        className="cursor-pointer text-slate-300 hover:text-white underline underline-offset-4"
-                    >
-                        Why this score?
-                    </button>  
+                        {mobileTimeOpen && (
+                            <div className="absolute left-0 top-full mt-2 w-24 rounded-lg bg-slate-900 ring-1 ring-white/10 shadow-lg z-20">
+                                {(["24h", "7d"] as const).map((v) => (
+                                    <button
+                                        key={v}
+                                        type="button"
+                                        onClick={() => {
+                                            setWindowSel(v);
+                                            setMobileTimeOpen(false);
+                                        }}
+                                        className={`w-full text-left px-3 py-2 text-xs cursor-pointer hover:bg-slate-800 ${
+                                            windowSel === v
+                                                ? "text-emerald-300"
+                                                : "text-slate-200"
+                                        }`}
+                                    >
+                                        {v}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </header>
 
             {/* content grid */}
             <div className="grid md:grid-cols-5 gap-6 mt-8">
-
                 {/* Trend */}
                 <section className="md:col-span-3 rounded-2xl bg-white/5 ring-1 ring-white/10 backdrop-blur">
-                    <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
-                        <h2 className="text-xl font-semibold">{windowSel} Trend (PoC)</h2>
+                    <div className="px-4 sm:px-6 py-4 border-b border-white/10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <h2 className="text-lg sm:text-xl font-semibold">
+                            {windowSel} Trend (PoC)
+                        </h2>
 
                         {/* score badge + Δ(window) */}
-                        <div className="absolute -top-23 right-6 flex items-center gap-4">
-                            <div className="relative group">
-                                <div 
-                                    className={`rounded-full border ${badgeColor} px-5 py-2
-                                            font-semibold shadow-[0_0_20px_-8px] text-xl md:text-2xl`}        
-                                >
-                                Score: {data.score}
-                                </div>
+                        <div className="flex flex-col items-start sm:items-end gap-1">
+                            <div className="flex items-center gap-3">
+                            {/* score badge */}
+                                <div className="relative group">
+                                    <div 
+                                        className={`rounded-full border ${badgeColor} px-4 py-1.5 text-sm sm:text-base
+                                                    font-semibold shadow-[0_0_20px_-8px] `}        
+                                    >
+                                        Score: {data.score}
+                                    </div>
 
-                                {/* Hover legend (appears when hovering the score) */}
-                                <div className="pointer-events-none opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-150 absolute right-0 top-full mt-2 z-10">
-                                    <div className="w-64 rounded-xl bg-black ring-1 ring-white/10 p-3 shadow-xl">
-                                        <p className="text-xs font-semibold text-slate-200 mb-2">Score legend</p>
-                                        <ul className="space-y-1 text-xs text-slate-300">
-                                            <li className="flex items-center gap-2">
-                                                <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
-                                                ≥ 90: strong positive
-                                            </li>
-                                            <li className="flex items-center gap-2">
-                                                <span className="inline-block h-2 w-2 rounded-full bg-yellow-400" />
-                                                70 - 89: positive
-                                            </li>
-                                            <li className="flex items-center gap-2">
-                                                <span className="inline-block h-2 w-2 rounded-full bg-amber-400" />
-                                                60 - 69: mixed/neutral
-                                            </li>
-                                            <li className="flex items-center gap-2">
-                                                <span className="inline-block h-2 w-2 rounded-full bg-rose-400" />
-                                                &lt; 59: negative
-                                            </li>
-                                        </ul>
+                                    {/* Hover legend (appears when hovering the score) */}
+                                    <div className="pointer-events-none opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-150 absolute right-0 top-full mt-2 z-10">
+                                        <div className="w-64 rounded-xl bg-black ring-1 ring-white/10 p-3 shadow-xl">
+                                            <p className="text-xs font-semibold text-slate-200 mb-2">
+                                                Score legend
+                                            </p>
+                                            <ul className="space-y-1 text-xs text-slate-300">
+                                                <li className="flex items-center gap-2">
+                                                    <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
+                                                    ≥ 90: strong positive
+                                                </li>
+                                                <li className="flex items-center gap-2">
+                                                    <span className="inline-block h-2 w-2 rounded-full bg-yellow-400" />
+                                                    70 - 89: positive
+                                                </li>
+                                                <li className="flex items-center gap-2">
+                                                    <span className="inline-block h-2 w-2 rounded-full bg-amber-400" />
+                                                    60 - 69: mixed/neutral
+                                                </li>
+                                                <li className="flex items-center gap-2">
+                                                    <span className="inline-block h-2 w-2 rounded-full bg-rose-400" />
+                                                    &lt; 59: negative
+                                                </li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </div>
+
+                                {/* triangle percentage */}
+                                <span 
+                                    className={`text-sm sm:text-base tabular-nums font-semibold ${
+                                        deltaPct >= 0 
+                                            ? "text-emerald-300" 
+                                            : "text-rose-300"
+                                    }`} 
+                                >
+                                    {deltaPct >= 0 ? "▲" : "▼"} 
+                                    {Math.abs(deltaPct).toFixed(2)}%
+                                </span>
                             </div>
 
-                            <span 
-                                className={`text-lg tabular-nums font-semibold md:text-2xl ${deltaPct >= 0 ? "text-emerald-300" : "text-rose-300"}`} 
-                                >
-                                    {deltaPct >= 0 ? "▲" : "▼"} {Math.abs(deltaPct).toFixed(2)}%
-                            </span>
+                            {/* why this score link */}
+                            <button
+                                onClick={() => setModalOpen(true)}
+                                className="cursor-pointer text-[11px] sm:text-xs text-slate-300 hover:text-white underline underline-offset-4 self-end"
+                            >
+                                Why this score?
+                            </button>  
                         </div>
-                    </div>
+                    </div>   
 
                     <div className="px-4 pt-4">
                         <TrendLine rows={rows} windowSel={windowSel}/>

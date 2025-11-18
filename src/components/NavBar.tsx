@@ -54,29 +54,29 @@ function ComparePane({ symbol }: { symbol: string }) {
     return (
         <div className="rounded-2xl bg-white/5 ring-1 ring-white/10 backdrop-blur h-full overflow-hidden flex flex-col">
             {/* Header */}
-            <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-                <div className="flex items-center gap-3">
+            <div className="px-5 sm:px-5 py-4 border-b border-white/10 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                     <img
                         src={meta.logo}
                         alt={`${meta.label} logo`}
-                        className="h-8 w-8 rounded-full ring-1 ring-white/10 object-contain bg-slate-800"
+                        className="h-7 w-7 sm:h-8 sm:w-8 rounded-full ring-1 ring-white/10 object-contain bg-slate-800"
                         onError={(e) => ((e.target as HTMLImageElement).style.visibility = "hidden")}
                     />
-                    <div>
-                        <p className="font-semibold leading-tight">{data?.name ?? meta.label.split(" (")[0]}</p>
-                        <p className="text-xs text-slate-400">({symbol.toUpperCase()})</p>
+                    <div className="min-w-0">
+                        <p className="font-semibold leading-tight text-sm sm:text-base truncate">{data?.name ?? meta.label.split(" (")[0]}</p>
+                        <p className="text-[11px] sm:text-xs text-slate-400">({symbol.toUpperCase()})</p>
                     </div>
                 </div>
 
                 {/* Score + Δ */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                     <div
-                        className={`rounded-full border ${glow} px-4 py-1.5 font-semibold text-base shadow-[0_0_20px_-8px]`}
+                        className={`rounded-full border ${glow} px-3 py-1 text-xs sm:text-sm font-semibold shadow-[0_0_20px_-8px] whitespace-nowrap`}
                     >
                         Score: {isLoading || !data ? "..." : data!.score}
                     </div>
                     <span
-                        className={`tabular-nums font-semibold ${deltaPct >= 0 ? "text-emerald-300" : "text-rose-300"}`}
+                        className={`tabular-nums text-xs sm:text-sm font-semibold ${deltaPct >= 0 ? "text-emerald-300" : "text-rose-300"}`}
                     >
                         {deltaPct >= 0 ? "▲" : "▼"} {Math.abs(deltaPct).toFixed(2)}%
                     </span>
@@ -241,39 +241,76 @@ export default function NavBar() {
 
     return (
         <div className="sticky top-0 z-40 w-full nav-color backdrop-blur border-b border-white/10">
-            <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
+            <div className="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    {isDetail ? (
-                        <button
+                    {/* Mobile breadcrumb: compact */}
+                    <div className="flex items-center gap-2 md:hidden">
+                        {isDetail ? (
+                            <button
+                                className="flex items-center gap-1 text-black text-sm font-extrabold hover:text-white cursor-pointer"
+                                onClick={() => router.back()}
+                            >
+                               <span>←</span> 
+                               <span>Back</span>
+                            </button>
+                        ) : (
+                            <Link 
+                                href="/" 
+                                className="text-black text-sm hover:text-white cursor-pointer font-extrabold"
+                            >
+                                Home
+                            </Link>
+                        )}
+
+                        {isDetail && (
+                            <span className="text-xs text-black/80 truncate max-w-[4rem] uppercase">
+                                {crumb}
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Desktop breadcrumb: full trail */}
+                    <div className="hidden md:flex items-center gap-3">
+                        {isDetail ? (
+                            <button
+                                className="text-black hover:text-white cursor-pointer font-extrabold"
+                                onClick={() => router.back()}
+                            >
+                                ← Back
+                            </button>
+                        ) : null}
+                        <span className="text-black">/</span>
+                        <Link
+                            href="/"
                             className="text-black hover:text-white cursor-pointer font-extrabold"
-                            onClick={() => router.back()}
                         >
-                            ← Back
-                        </button>
-                    ) : null}
-                    <span className="text-black">/</span>
-                    <Link href="/" className="text-black hover:text-white cursor-pointer font-extrabold">
-                        Home
-                    </Link>
-                    {(isDetail || isExplore) && (
-                        <>
-                            <span className="text-black">/</span>
-                            {isDetail ? (
-                                <span className="text-slate-200 font-sans">{crumb}</span>
-                            ) : (
-                                <Link
-                                    href={tokenDetailHref}
-                                    className="text-black hover:text-white cursor-pointer font-extrabold"
-                                    title="Go to selected token detail"
-                                >
-                                    Token detail
-                                </Link>
-                            )}
-                        </>
-                    )}
+                            Home
+                        </Link>  
+                        {(isDetail || isExplore) && (
+                            <>
+                                <span className="text-black">/</span>
+                                {isDetail ? (
+                                    <span className="text-slate-200 font-sans">{crumb}</span>
+                                ) : (
+                                    <Link
+                                        href={tokenDetailHref}
+                                        className="text-black hover:text-white cursor-pointer font-extrabold"
+                                        title="Go to selected token detail"
+                                    >
+                                        Token detail
+                                    </Link>
+                                )}
+                            </>
+                        )}
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                {/* RIGHT: nav pills (slightly smaller on token detail mobile */}
+                <div 
+                    className={`flex items-center gap-2 md:gap-4 ${
+                        isDetail ? "scale-[0.9] origin-right md:scale-100" : ""
+                    }`}
+                >
                     <button
                         className="nav-shimmer-btn nav-shimmer-neutral"
                         onClick={() => setOpen(true)}
@@ -297,120 +334,148 @@ export default function NavBar() {
                 </div>
             </div>
 
-            {open && mounted && createPortal(
-                <div className="fixed inset-0 z-50">
-                    <div 
-                        className="fixed inset-0 bg-black/60" 
-                        onClick={() => setOpen(false)} 
-                        aria-hidden="true" 
-                    />
+            {open && 
+                mounted && 
+                    createPortal(
+                        <div className="fixed inset-0 z-50">
+                            <div 
+                                className="fixed inset-0 bg-black/60" 
+                                onClick={() => setOpen(false)} 
+                                aria-hidden="true" 
+                            />
 
-                    {/* centered modal */}
-                    <div className="fixed inset-0 flex items-center justify-center p-4">
-                        <div
-                            role="dialog" 
-                            aria-modal="true" 
-                            aria-labelledby="compare-title"
-                            className="
-                                compare-neon-modal
-                                w-[92vw] max-w-7xl 
-                                max-h-[calc(100vh-2rem)] 
-                                overflow-hidden flex flex-col
-                                text-slate-100
-                            "
-                        >
-                            {/* Modal header */}
-                            <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between bg-black/20 backdrop-blur-sm">
-                                <div className="flex items-center gap-3">
-                                    {showHeatmap ? (
-                                        <button
-                                            onClick={() => setShowHeatmap(false)}
-                                            className="rounded-md bg-black hover:bg-[#282821] px-3 py-1.5 text-slate-200 cursor-pointer"
-                                        >
-                                            ← Back
-                                        </button>
-                                    ) : null}
-                                    <h4 className="text-lg font-semibold">Compare tokens</h4>
-                                    <span className="text-xs text-slate-400">(left is current token)</span>
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                    {!showHeatmap && (
-                                        <button 
-                                            onClick={() => setShowHeatmap(true)}
-                                            className="rounded-full bg-amber-500/15 text-amber-300 ring-1 ring-amber-400/30 hover:bg-amber-500/25 px-3 py-1.5 cursor-pointer"
-                                            title="Show sentiment heatmap"
-                                        >
-                                
-                                            Who&apos;s Hot? <span aria-hidden>🔥</span> 
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="px-5 py-3 border-b border-white/10 grid grid-cols-1 md:grid-cols-2 gap-3 shrink-0">
-                                {/* Left (locked to current) */}
-                                <div>
-                                    <label className="block text-xs text-slate-400 mb-1"> Left (current)</label>
-                                    <div className="w-full rounded-md bg-black text-slate-100 px-3 py-2 ring-1 ring-white/10 cursor-not-allowed opacity-75">
-                                        {TOKEN_META[currentSymbol]?.label ?? currentSymbol.toUpperCase()}
-                                    </div>
-                                </div>
-                                
-                                {/* Right A*/}
-                                <div>
-                                    <label className="block text-xs text-slate-400 mb-1">Right A</label>
-                                    <select
-                                        className="w-full rounded-md bg-black text-slate-100 px-3 py-2 ring-1 ring-white/10 cursor-pointer"
-                                        value={rightA}
-                                        onChange={(e) => setRightA(e.target.value)}
-                                    >
-                                        {TOKENS.filter(t => t.value !== currentSymbol).map((t) => (
-                                            <option key={t.value} value={t.value}>{t.label}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            {/* Compare grid */}
-                            <div className="p-5 min-h-0 flex-1 overflow-y-auto">
-                                {showHeatmap ? (
-                                    <div className="p-5">
-                                        <HeatmapTreemapPlotly 
-                                            left={{
-                                                symbol: currentSymbol,
-                                                name: leftDetail?.data?.name ?? currentSymbol.toUpperCase(),
-                                                evidence: leftDetail?.data?.evidence ?? [],
-                                            }} 
-                                            right={{
-                                                symbol: rightA,
-                                                name: rightDetail?.data?.name ?? rightA.toUpperCase(),
-                                                evidence: rightDetail?.data?.evidence ?? [],
-                                            }} 
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5 min-h-0 flex-1 overflow-y-auto bg-black">
-                                        <ComparePane symbol={currentSymbol}/>
-                                        <ComparePane symbol={rightA}/>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Footer */}
-                            <div className="px-5 py-3 border-t border-white/10 bg-black/25 backdrop-blur-sm text-right">
-                                <button
-                                    onClick={() => setOpen(false)}
-                                    className="rounded-lg bg-black hover:bg-[#282821] px-4 py-2 text-white cursor-pointer"
+                            {/* centered modal */}
+                            <div className="fixed inset-0 flex items-center justify-center p-4">
+                                <div
+                                    role="dialog" 
+                                    aria-modal="true" 
+                                    aria-labelledby="compare-title"
+                                    className="
+                                        compare-neon-modal
+                                        w-[92vw] max-w-7xl 
+                                        max-h-[calc(100vh-2rem)] 
+                                        overflow-hidden flex flex-col
+                                        text-slate-100
+                                    "
                                 >
-                                    Done
-                                </button>
+
+                                    {/* Modal header */}
+                                    <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between bg-black/20 backdrop-blur-sm">
+                                        <div className="flex items-center gap-3">
+                                            {showHeatmap ? (
+                                                <button
+                                                    onClick={() => setShowHeatmap(false)}
+                                                    className="rounded-md bg-black hover:bg-[#282821] px-3 py-1.5 text-slate-200 cursor-pointer"
+                                                >
+                                                    ← Back
+                                                </button>
+                                            ) : null}
+                                            <h4 
+                                                id="compare-title"
+                                                className="text-base sm:text-lg font-semibold"
+                                            >
+                                                Compare tokens
+                                            </h4>
+                                            <span className="hidden sm:inline text-xs text-slate-400">
+                                                (left is current token)
+                                            </span>
+                                            <span className="inline sm:hidden text-[11px] text-slate-400">
+                                                (swipe to see both)
+                                            </span>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            {!showHeatmap && (
+                                                <button 
+                                                    onClick={() => setShowHeatmap(true)}
+                                                    className="rounded-full bg-amber-500/15 text-amber-300 ring-1 ring-amber-400/30 hover:bg-amber-500/25 px-3 py-1.5 text-xs sm:text-sm cursor-pointer"
+                                                    title="Show sentiment heatmap"
+                                                >
+                                        
+                                                    Who&apos;s Hot? <span aria-hidden>🔥</span> 
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Select row */}
+                                    <div className="px-5 py-3 border-b border-white/10 grid grid-cols-1 md:grid-cols-2 gap-3 shrink-0">
+                                        {/* Left (locked to current) */}
+                                        <div>
+                                            <label className="block text-xs text-slate-400 mb-1"> 
+                                                <span className="hidden md:inline">Left (current)</span>
+                                                <span className="md:hidden">Top (current)</span>
+                                            </label>
+                                            <div className="w-full rounded-md bg-black text-slate-100 px-3 py-2 ring-1 ring-white/10 cursor-not-allowed opacity-75">
+                                                {TOKEN_META[currentSymbol]?.label ?? currentSymbol.toUpperCase()}
+                                            </div>
+                                        </div>
+                                
+                                        {/* Right A*/}
+                                        <div>
+                                            <label className="block text-xs text-slate-400 mb-1">
+                                                <span className="hidden md:inline">Right Token</span>
+                                                <span className="md:hidden">Bottom Token</span>
+                                            </label>
+                                            <select
+                                                className="w-full rounded-md bg-black text-slate-100 px-3 py-2 ring-1 ring-white/10 cursor-pointer"
+                                                value={rightA}
+                                                onChange={(e) => setRightA(e.target.value)}
+                                            >
+                                                {TOKENS.filter(t => t.value !== currentSymbol).map((t) => (
+                                                    <option key={t.value} value={t.value}>{t.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Compare grid */}
+                                    <div className="p-5 min-h-0 flex-1 overflow-y-auto">
+                                        {showHeatmap ? (
+                                            <div className="p-5">
+                                                <HeatmapTreemapPlotly 
+                                                    left={{
+                                                        symbol: currentSymbol,
+                                                        name: leftDetail?.data?.name ?? currentSymbol.toUpperCase(),
+                                                        evidence: leftDetail?.data?.evidence ?? [],
+                                                    }} 
+                                                    right={{
+                                                        symbol: rightA,
+                                                        name: rightDetail?.data?.name ?? rightA.toUpperCase(),
+                                                        evidence: rightDetail?.data?.evidence ?? [],
+                                                    }} 
+                                                />
+                                            </div>
+                                        ) : (
+                                            <>
+                                                {/* mobile-only scroll hint */}
+                                                <div className="md:hidden mb-3 text-[11px] text-slate-400 flex items-center justify-center gap-1">
+                                                    <span>Swipe up to see the second token</span>
+                                                    <span aria-hidden>⬆️⬇️</span>
+                                                </div>
+
+                                                <div className="p-4 md:p-5 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 min-h-0 flex-1 overflow-y-auto bg-black">
+                                                    <ComparePane symbol={currentSymbol}/>
+                                                    <ComparePane symbol={rightA}/>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+
+                                    {/* Footer */}
+                                    <div className="px-5 py-3 border-t border-white/10 bg-black/25 backdrop-blur-sm text-right">
+                                        <button
+                                            onClick={() => setOpen(false)}
+                                            className="rounded-lg bg-black hover:bg-[#282821] px-4 py-2 text-white cursor-pointer"
+                                        >
+                                            Done
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                </div>,
-                document.body
-            )}
+                        </div>,
+                        document.body
+                    )}
         </div>
     );
 }

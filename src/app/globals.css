@@ -293,6 +293,19 @@
   }
 }
 
+@media (max-width: 640px) {
+  .nav-shimmer-btn {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.75rem;
+    --inset: 28px;
+  }
+
+  .nav-shimmer-text {
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+  }
+}
+
 /* ============================================================================================================*/
 /* ======================= Compare popup box / Neon glass =====================================================*/
 .compare-neon-modal {

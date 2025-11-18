@@ -81,14 +81,24 @@ export default function HomeHero({ tokens }: { tokens: TokenRow[] }) {
                         </div>
 
                         {/* token list */}
-                        <div className="flex lg:flex-col gap-3 w-full justify-center lg:w-auto">
+                        <div className="flex lg:flex-col gap-1 w-full justify-center items-stretch lg:w-auto">
                             {tokens.map((t) => {
                                 const selected = t.symbol === active.symbol;
+                                const deltaRaw = t.delta24 ?? 0;
+                                const delta = Math.abs(t.delta24).toFixed(2);
+                                const isUp = deltaRaw >= 0;
+                                const arrow = isUp ? "▲" : "▼";
+
                                 return (
                                     <button
                                         key={t.symbol}
                                         onClick={() => setActiveSymbol(t.symbol)}
-                                        className={`group flex-1 lg:flex-none flex items-center gap-3 rounded-2xl border px-3 py-2 text-left transition cursor-pointer
+                                        className={`group h-full flex-1 lg:flex-none flex items-center gap-1.5 
+                                            rounded-lg sm:rounded-xl 
+                                            border border-slate-700/60
+                                            px-1.5 py-1 sm:px-2.5 sm:py-2 
+                                            text-left transition cursor-pointer
+                                            min-w-[7rem] sm:min-w-[9.5rem]
                                             ${
                                                 selected
                                                     ? "border-emerald-400/80 bg-emerald-400/10"
@@ -96,20 +106,34 @@ export default function HomeHero({ tokens }: { tokens: TokenRow[] }) {
                                             }`}
                                         >
                                             <div 
-                                                className={`h-9 w-9 rounded-full bg-gradient-to-br ${gradientBySymbol[
-                                                    t.symbol.toUpperCase()
-                                                ] ?? "from-slate-500 to-slate-800"} flex items-center justify-center text-xs font-semibold text-white`}
+                                                className={`h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-gradient-to-br ${
+                                                    gradientBySymbol[t.symbol.toUpperCase()] ?? 
+                                                    "from-slate-500 to-slate-800"
+                                                } flex items-center justify-center text-[8px] sm:text-[10px] font-semibold text-white`}
                                             >
                                                 {t.symbol.toUpperCase()}
                                             </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-medium text-slate-50">
+
+                                            <div className="flex flex-col leading-tight">
+                                                <span className="text-[11px] sm:text-sm font-medium text-slate-50">
                                                     {t.name}
                                                 </span>
-                                                <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
-                                                    Score {t.score} •{" "}
-                                                    {t.delta24 >= 0 ? "▲" : "▼"}{" "}
-                                                    {Math.abs(t.delta24).toFixed(2)}%
+
+                                                <span className="text-[8px] sm:text-[10px] uppercase tracking-[0.16em] text-slate-400">
+                                                    Score {t.score}
+                                                </span>
+
+                                                {/* highlighted delta pill */}
+                                                <span 
+                                                    className={`mt-0.5 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5
+                                                        text-[8px] sm:text-[10px] font-medium
+                                                        ${
+                                                            isUp
+                                                                ? "bg-emerald-500/12 text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.45)]"
+                                                                : "bg-rose-500/12 text-rose-300 shadow-[0_0_10px_rgba(248,113,113,0.45)]"
+                                                        }`}                                                 
+                                                >
+                                                    {arrow} {delta}%
                                                 </span>
                                             </div>
                                         </button>
