@@ -54,7 +54,7 @@ function ComparePane({ symbol }: { symbol: string }) {
     return (
         <div className="rounded-2xl bg-white/5 ring-1 ring-white/10 backdrop-blur h-full overflow-hidden flex flex-col">
             {/* Header */}
-            <div className="px-5 sm:px-5 py-4 border-b border-white/10 flex items-center justify-between gap-3">
+            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-white/10 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                     <img
                         src={meta.logo}
@@ -84,9 +84,9 @@ function ComparePane({ symbol }: { symbol: string }) {
             </div>
 
             {/* Body */}
-            <div className="px-5 py-4 grid gap-4 grid-rows-[auto_auto_1fr] min-h-0">
+            <div className="px-4 py-3 sm:px-5 sm:py-4 grid gap-3 sm:gap-4 grid-rows-[auto_auto_1fr] min-h-0">
                 {/* Price */}
-                <div className="text-sm text-slate-300">
+                <div className="text-xs sm:text-sm text-slate-300">
                     <span className="text-slate-400">Price:</span><span className="font-medium text-white">{price}</span>
                 </div>
 
@@ -100,7 +100,7 @@ function ComparePane({ symbol }: { symbol: string }) {
 
                 {/* Evidence (scrolls) */}
                 <div className="rounded-xl bg-black/20 ring-1 ring-white/10 overflow-auto">
-                    <div className="px-4 py-2 border-b border-white/10 text-sm font-semibold">Evidence (latest)</div>
+                    <div className="px-4 py-2 border-b border-white/10 text-xs sm:text-sm font-semibold">Evidence (latest)</div>
                     {error ? (
                         <p className="p-4 text-rose-300 text-sm">Failed to load.</p>
                     ) : isLoading || !data ? (
@@ -114,7 +114,7 @@ function ComparePane({ symbol }: { symbol: string }) {
                             {(data!.evidence ?? []).slice(0, 4).map((e, i) => (
                                 <li key={i} className="px-4 py-3 flex items-center justify-between gap-3">
                                     <div className="min-w-0">
-                                        <p className="truncate">{e.url ? <a className="underline" href={e.url} target="_blank">{e.title}</a> : e.title}</p>
+                                        <p className="text-xs sm:text-sm truncate">{e.url ? <a className="underline" href={e.url} target="_blank">{e.title}</a> : e.title}</p>
                                         <p className="text-xs text-slate-400">{e.source}</p>
                                     </div>
                                     <span className={`px-2 py-0.5 rounded text-[11px] ring-1 ${
@@ -345,24 +345,25 @@ export default function NavBar() {
                             />
 
                             {/* centered modal */}
-                            <div className="fixed inset-0 flex items-center justify-center p-2 sm:p-4">
+                            <div className="fixed inset-0 flex items-center justify-center p-1 sm:p-4">
                                 <div
                                     role="dialog" 
                                     aria-modal="true" 
                                     aria-labelledby="compare-title"
                                     className="
                                         compare-neon-modal
-                                        w-full max-w-[19rem]
+                                        w-full max-w-[22rem]
                                         sm:w-[92vw] sm:max-w-7xl 
-                                        max-h-[calc(100vh-2rem)] 
+                                        max-h-[calc(100vh-6rem)] 
+                                        sm:max-h-[calc(100vh-2rem)] 
                                         overflow-hidden flex flex-col
                                         text-slate-100
-                                        scale-[0.9] sm:scale-100
+                                        rounded-3xl
                                     "
                                 >
 
                                     {/* Modal header */}
-                                    <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between bg-black/20 backdrop-blur-sm">
+                                    <div className="px-4 py-3 sm:px-5 sm:py-4 border-b border-white/10 flex items-center justify-between bg-black/20 backdrop-blur-sm">
                                         <div className="flex items-center gap-3">
                                             {showHeatmap ? (
                                                 <button
