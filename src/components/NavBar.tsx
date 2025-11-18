@@ -345,17 +345,19 @@ export default function NavBar() {
                             />
 
                             {/* centered modal */}
-                            <div className="fixed inset-0 flex items-center justify-center p-4">
+                            <div className="fixed inset-0 flex items-center justify-center p-2 sm:p-4">
                                 <div
                                     role="dialog" 
                                     aria-modal="true" 
                                     aria-labelledby="compare-title"
                                     className="
                                         compare-neon-modal
-                                        w-[92vw] max-w-7xl 
+                                        w-full max-w-md
+                                        sm:w-[92vw] sm:max-w-7xl 
                                         max-h-[calc(100vh-2rem)] 
                                         overflow-hidden flex flex-col
                                         text-slate-100
+                                        scale-[0.95] sm:scale-100
                                     "
                                 >
 

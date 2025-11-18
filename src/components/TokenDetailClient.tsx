@@ -145,6 +145,9 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
     const [sourceSel, setSourceSel] = useState<"All" | "Reddit" | "News" | "Other">("All");
     const [modalOpen, setModalOpen] = useState(false);
     const [mobileTimeOpen, setMobileTimeOpen] = useState(false);
+    const [mobileSourceOpen, setMobileSourceOpen] = useState(false);
+
+
     const { data, error, isLoading } = useTokenDetail(symbol, windowSel) as {
         data?: TokenData;
         error?: unknown;
@@ -455,14 +458,17 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
 
                 {/* Evidence feed, full-width on small screens */}
                 <section className="md:col-span-5 rounded-2xl bg-white/5 ring-1 ring-white/10 backdrop-blur">
-                    <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+                    <div className="px-4 sm:px-6 py-4 border-b border-white/10 flex items-center justify-between">
                         <h3 className="text-lg font-semibold">Evidence Feed</h3>
-                        <label className="text-slate-300 text-sm flex items-center gap-2">
+
+                        <div className="text-slate-300 text-sm flex items-center gap-2">
                             <span className="hidden sm:inline">Source:</span>
+
+                            {/* Desktop: native select */}
                             <select
                                 value={sourceSel}
-                                onChange={(e) => setSourceSel(e.target.value as any)}
-                                className="bg-slate-800/60 ring-1 ring-white/10 rounded-md px-2 py-1 text-slate-100"
+                                onChange={(e) => setSourceSel(e.target.value as "All" | "Reddit" | "News" | "Other")}
+                                className="hidden sm:block bg-slate-800/60 ring-1 ring-white/10 rounded-md px-2 py-1 text-slate-100"
                                 aria-label="Filter evidence by source"
                             >
                                 <option value="All">All</option>
@@ -470,7 +476,40 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                                 <option value="News">News</option>
                                 <option value="Other">Other</option>
                             </select>
-                        </label>
+
+                            {/* Mobile: pill + dropdown under it */}
+                            <div className="relative sm:hidden">
+                                <button
+                                    type="button"
+                                    onClick={() => setMobileSourceOpen((v) => !v)}
+                                    className="bg-slate-800/60 ring-1 ring-white/10 rounded-md px-3 py-1 flex items-center gap-1 text-xs text-slate-100 cursor-pointer"
+                                    aria-label="Filter evidence by source"
+                                >
+                                    <span>{sourceSel}</span>
+                                    <span aria-hidden>▾</span>
+                                </button>
+
+                                {mobileSourceOpen && (
+                                    <div className="absolute left-0 top-full mt-2 w-28 rounded-lg bg-slate-900 ring-1 ring-white/10 shadow-lg z-20">
+                                        {(["All", "Reddit", "News", "Other"] as const).map((opt) => (
+                                            <button
+                                                key={opt}
+                                                type="button"
+                                                onClick={() => {
+                                                    setSourceSel(opt);
+                                                    setMobileSourceOpen(false);
+                                                }}
+                                                className={`w-full text-left px-3 py-2 text-xs cursor-pointer hover:bg-slate-800 ${
+                                                    sourceSel === opt ? "text-emerald-300" : "text-slate-200"
+                                                }`}
+                                            >
+                                                {opt}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                     <ul className="divide-y divide-white/10">
                         {filteredEvidence.map((e, i) => (
