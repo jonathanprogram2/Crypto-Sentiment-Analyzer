@@ -352,12 +352,12 @@ export default function NavBar() {
                                     aria-labelledby="compare-title"
                                     className="
                                         compare-neon-modal
-                                        w-full max-w-md
+                                        w-full max-w-[19rem]
                                         sm:w-[92vw] sm:max-w-7xl 
                                         max-h-[calc(100vh-2rem)] 
                                         overflow-hidden flex flex-col
                                         text-slate-100
-                                        scale-[0.95] sm:scale-100
+                                        scale-[0.9] sm:scale-100
                                     "
                                 >
 

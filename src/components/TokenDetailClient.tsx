@@ -490,7 +490,7 @@ export default function TokenDetailClient({ symbol = "btc" }: { symbol?: string 
                                 </button>
 
                                 {mobileSourceOpen && (
-                                    <div className="absolute left-0 top-full mt-2 w-28 rounded-lg bg-slate-900 ring-1 ring-white/10 shadow-lg z-20">
+                                    <div className="absolute right-0 top-full mt-2 w-28 rounded-lg bg-slate-900 ring-1 ring-white/10 shadow-lg z-20">
                                         {(["All", "Reddit", "News", "Other"] as const).map((opt) => (
                                             <button
                                                 key={opt}
