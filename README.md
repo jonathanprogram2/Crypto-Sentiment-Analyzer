@@ -17,23 +17,6 @@ The app is deployed on Vercel:
 ### URL
 https://cryptosenanalyzer.vercel.app/
 
-### Demo Video
-
-> A fast walkthrough of my student-built MVP that scores crypto sentiment and surfaces real evidence in one place.
-
-[▶ Watch the demo video](https://youtu.be/XeiHBWU59e8)
-
-**Chapters**
- - 0:00 Intro
- - 00:30 What It Does
- - 1:10 Live Demo
- - 6:55 Code Walkthrough
- - 10:45 Edge Cases & Constraints
- - 11:52 What's Next
- - 12:12 Close
-
----
-
 ## Table of contents
 
 - [Features](#features)
@@ -85,23 +68,21 @@ https://cryptosenanalyzer.vercel.app/
 
 ## Screenshots
 
-**Home**  
-<img width="2526" height="1399" alt="Screenshot 2025-09-29 195329" src="https://github.com/user-attachments/assets/deb0541d-1191-4050-928b-0f6e39af453a" />
+**Home Page**  
+<img width="2545" height="1394" alt="Screenshot 2026-01-06 194201" src="https://github.com/user-attachments/assets/abf669ff-8898-48db-aaf9-8bc390f10570" />
 
-**Token Detail – 24h / 7d**  
-<img width="2505" height="1405" alt="Screenshot 2025-09-29 195528" src="https://github.com/user-attachments/assets/c622be9f-fe2c-4b94-a02a-861150c3d3fb" />
+**Token Detail Page**  
+<img width="2545" height="1397" alt="Screenshot 2026-01-06 195107" src="https://github.com/user-attachments/assets/7ab345e1-7ff1-413e-bd17-b741f5098145" />
 
-**Explore (news hub)**  
-<img width="2500" height="1396" alt="Screenshot 2025-09-29 195734" src="https://github.com/user-attachments/assets/833e40b6-d6f8-4dbb-8306-773176418fc8" />
+**Explore Page**  
+<img width="2533" height="1391" alt="Screenshot 2026-01-06 195144" src="https://github.com/user-attachments/assets/a90b3037-45d6-4478-8fc0-425f6f18671e" />
 
 **Compare modal**
-<img width="2420" height="1261" alt="Screenshot 2025-09-30 111604" src="https://github.com/user-attachments/assets/c700a8e2-e1b3-4ecf-84e4-07394e755a19" />
+<img width="2498" height="1280" alt="Screenshot 2026-01-06 194935" src="https://github.com/user-attachments/assets/70e52af1-ee5f-47ba-a8cb-a86deed2d8e9" />
 
 **“Who’s Hot?” heatmap**  
-<img width="2100" height="1254" alt="Screenshot 2025-09-30 113852" src="https://github.com/user-attachments/assets/878e7526-bab3-415f-aadd-092da537b5cd" />
+<img width="2431" height="1278" alt="Screenshot 2026-01-06 195015" src="https://github.com/user-attachments/assets/cbb15f1b-b587-4b7b-b47d-a7f1706a719c" />
 
-**“How it works” modal**  
-<img width="1239" height="1386" alt="Screenshot 2025-09-30 114201" src="https://github.com/user-attachments/assets/7c6643f0-61f1-4b78-a7ae-9a9c638b511e" />
 
 ---
 
